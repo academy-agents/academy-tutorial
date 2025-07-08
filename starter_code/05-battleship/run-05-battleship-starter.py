@@ -28,6 +28,8 @@ class BattleshipPlayer(Agent):
     def __init__(
         self,
     ) -> None:
+        from academy_tutorial.battleship import Board
+
         super().__init__()
         self.guesses = Board()
 
@@ -38,6 +40,7 @@ class BattleshipPlayer(Agent):
         Returns:
             The coordinates to launch an attack.    
         """
+        from academy_tutorial.battleship import Crd
 
         # TODO: Implement an attack strategy
 
@@ -60,6 +63,8 @@ class BattleshipPlayer(Agent):
         Returns:
             A new board with all the ships placed.
         """
+        from academy_tutorial.battleship import Board
+        from academy_tutorial.battleship import Crd
 
         # TODO: Implement a strategy for placing the ships
 
@@ -75,6 +80,9 @@ class Coordinator(Agent):
         size: int = 10,
         ships: list[int] | None = None,
     ) -> None:
+        from academy_tutorial.battleship import Board
+        from academy_tutorial.battleship import Game
+
         super().__init__()
         self.player_0 = player_0
         self.player_1 = player_1
@@ -83,6 +91,9 @@ class Coordinator(Agent):
         self.stats = [0, 0]
 
     async def game(self, shutdown: asyncio.Event) -> int:
+        from academy_tutorial.battleship import Board
+        from academy_tutorial.battleship import Game
+        
         while not shutdown.is_set():
             attack = await (await self.player_0.get_move())
             result = self.game_state.attack(0, attack)
