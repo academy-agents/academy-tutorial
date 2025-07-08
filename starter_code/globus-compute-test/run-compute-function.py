@@ -4,7 +4,7 @@ TUTORIAL_ENDPOINT_UUID = '707fe7ed-6f06-4ec3-877f-1c1f0e9aeb84'
 
 def remote_function():
     import socket
-    print(socket.gethostname())
+    return socket.gethostname()
 
 def main():
     with Executor(TUTORIAL_ENDPOINT_UUID) as executor:
