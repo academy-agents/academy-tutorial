@@ -27,12 +27,15 @@ class BattleshipPlayer(Agent):
     def __init__(
         self,
     ) -> None:
+        from academy_tutorial.battleship import Board
+
         super().__init__()
         self.guesses = Board()
 
     @action
     async def get_move(self) -> Crd:
-        logger.info('Making move.')
+        from academy_tutorial.battleship import Crd
+
         await asyncio.sleep(1)
         while True:
             row = random.randint(0, self.guesses.size - 1)
@@ -53,7 +56,9 @@ class BattleshipPlayer(Agent):
 
     @action
     async def new_game(self, ships: list[int], size: int = 10) -> Board:
-        logger.info('Setting up board.')
+        from academy_tutorial.battleship import Board
+        from academy_tutorial.battleship import Crd
+
         self.guesses = Board(size)
         my_board = Board(size)
         for i, ship in enumerate(ships):
@@ -72,6 +77,9 @@ class Coordinator(Agent):
         size: int = 10,
         ships: list[int] | None = None,
     ) -> None:
+        from academy_tutorial.battleship import Board
+        from academy_tutorial.battleship import Game
+
         super().__init__()
         self.player_0 = player_0
         self.player_1 = player_1
@@ -99,8 +107,10 @@ class Coordinator(Agent):
 
     @loop
     async def play_games(self, shutdown: asyncio.Event) -> None:
+        from academy_tutorial.battleship import Board
+        from academy_tutorial.battleship import Game
+        
         while not shutdown.is_set():
-            logger.info('Starting game.')
             player_0_board = await (await self.player_0.new_game(self.ships))
             player_1_board = await (await self.player_1.new_game(self.ships))
             self.game_state = Game(player_0_board, player_1_board)
