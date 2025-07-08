@@ -25,6 +25,8 @@ classifiers = [
 ]
 dependencies = [
     "academy-py>=0.2.0",
+    "emoji",
+    "globus-compute-sdk"
 ]
 
 [project.optional-dependencies]

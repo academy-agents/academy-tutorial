@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import multiprocessing
 import random
-from concurrent.futures import ProcessPoolExecutor
 from typing import ClassVar
+from typing import Literal
 
 from academy.agent import action
 from academy.agent import Agent
@@ -14,13 +13,14 @@ from academy.exchange.cloud import HttpExchangeFactory
 from academy.handle import Handle
 from academy.logging import init_logging
 from academy.manager import Manager
+from globus_compute_sdk import Executor
 
 from academy_tutorial.battleship import Board
 from academy_tutorial.battleship import Crd
 from academy_tutorial.battleship import Game
 
 EXCHANGE_ADDRESS = 'https://exchange.proxystore.dev'
-TUTORIAL_ENDPOINT_UUID = ''
+TUTORIAL_ENDPOINT_UUID = '707fe7ed-6f06-4ec3-877f-1c1f0e9aeb84'
 logger = logging.getLogger(__name__)
 
 
@@ -33,28 +33,35 @@ class BattleshipPlayer(Agent):
 
     @action
     async def get_move(self) -> Crd:
-        logger.info('Making move.')
-        await asyncio.sleep(1)
-        while True:
-            row = random.randint(0, self.guesses.size - 1)
-            col = random.randint(0, self.guesses.size - 1)
-            if self.guesses.receive_attack(Crd(row, col)) != 'already_guessed':
-                return Crd(row, col)
+        """Choose a new attack.
+        
+        Returns:
+            The coordinates to launch an attack.    
+        """
+
+        # TODO: Implement an attack strategy
+
+    @action
+    async def notify_result(self, loc: Crd, result: Literal["hit", "miss", "guessed"]):
+        return 
 
     @action
     async def notify_move(self, loc: Crd) -> None:
-        # Naive player does not keep track of where guesses
-        # happen
         return
 
     @action
     async def new_game(self, ships: list[int], size: int = 10) -> Board:
-        logger.info('Setting up board.')
-        self.guesses = Board(size)
-        my_board = Board(size)
-        for i, ship in enumerate(ships):
-            my_board.place_ship(Crd(i, 0), ship, 'horizontal')
-        return my_board
+        """Start a new game.
+
+        Args:
+            ships: The list of ships to place.
+            size: The size of the board.
+
+        Returns:
+            A new board with all the ships placed.
+        """
+
+        # TODO: Implement a strategy for placing the ships
 
 
 class Coordinator(Agent):
@@ -78,12 +85,16 @@ class Coordinator(Agent):
     async def game(self, shutdown: asyncio.Event) -> int:
         while not shutdown.is_set():
             attack = await (await self.player_0.get_move())
-            self.game_state.attack(0, attack)
+            result = self.game_state.attack(0, attack)
+            await (await self.player_0.notify_result(attack, result))
+            await (await self.player_1.notify_move(attack))
             if self.game_state.check_winner() >= 0:
                 return self.game_state.check_winner()
 
             attack = await (await self.player_1.get_move())
-            self.game_state.attack(1, attack)
+            result = self.game_state.attack(1, attack)
+            await (await self.player_1.notify_result(attack, result))
+            await (await self.player_0.notify_move(attack))
             if self.game_state.check_winner() >= 0:
                 return self.game_state.check_winner()
 
@@ -111,13 +122,10 @@ class Coordinator(Agent):
 async def main() -> int:
     init_logging(logging.INFO)
 
-    mp_context = multiprocessing.get_context('spawn')
-    executor = ProcessPoolExecutor(
-        max_workers=3,
-        initializer=init_logging,
-        mp_context=mp_context,
-    )
+    # Use the chameleon instance for execution.
+    executor = Executor(TUTORIAL_ENDPOINT_UUID)
 
+    # Use the hosted exchange with globus auth.
     factory = HttpExchangeFactory(
         url=EXCHANGE_ADDRESS,
         auth_method='globus',

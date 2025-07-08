@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
-from typing import ClassVar
+from typing import ClassVar, Literal
 
 from academy.agent import action
 from academy.agent import Agent
@@ -37,8 +37,13 @@ class BattleshipPlayer(Agent):
         while True:
             row = random.randint(0, self.guesses.size - 1)
             col = random.randint(0, self.guesses.size - 1)
-            if self.guesses.receive_attack(Crd(row, col)) != 'already_guessed':
+            if self.guesses.receive_attack(Crd(row, col)) != 'guessed':
                 return Crd(row, col)
+    
+    @action
+    async def notify_result(self, loc: Crd, result: Literal["hit", "miss", "guessed"]):
+        # Naive player does not keep track of results
+        return 
 
     @action
     async def notify_move(self, loc: Crd) -> None:
@@ -77,12 +82,16 @@ class Coordinator(Agent):
     async def game(self, shutdown: asyncio.Event) -> int:
         while not shutdown.is_set():
             attack = await (await self.player_0.get_move())
-            self.game_state.attack(0, attack)
+            result = self.game_state.attack(0, attack)
+            await (await self.player_0.notify_result(attack, result))
+            await (await self.player_1.notify_move(attack))
             if self.game_state.check_winner() >= 0:
                 return self.game_state.check_winner()
 
             attack = await (await self.player_1.get_move())
-            self.game_state.attack(1, attack)
+            result = self.game_state.attack(1, attack)
+            await (await self.player_1.notify_result(attack, result))
+            await (await self.player_0.notify_move(attack))
             if self.game_state.check_winner() >= 0:
                 return self.game_state.check_winner()
 
