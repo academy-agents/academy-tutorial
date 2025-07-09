@@ -164,7 +164,10 @@ async def main() -> int:
                 'Enter command (exit, game, stat): ',
             )
             if user_input.lower() == 'exit':
-                print('Exiting...')
+                print('Exiting... attempting shutdown')
+                await coordinator.shutdown()
+                await player_1.shutdown()
+                await player_2.shutdown()
                 break
             elif user_input.lower() == 'game':
                 game = await (await coordinator.get_game_state())
