@@ -35,6 +35,8 @@ class BattleshipPlayer(Agent):
     @action
     async def get_move(self) -> Crd:
         from academy_tutorial.battleship import Crd
+        import asyncio
+        import random
 
         await asyncio.sleep(1)
         while True:

@@ -90,10 +90,7 @@ class Coordinator(Agent):
         self.ships = ships or self._default_ships
         self.stats = [0, 0]
 
-    async def game(self, shutdown: asyncio.Event) -> int:
-        from academy_tutorial.battleship import Board
-        from academy_tutorial.battleship import Game
-        
+    async def game(self, shutdown: asyncio.Event) -> int:        
         while not shutdown.is_set():
             attack = await (await self.player_0.get_move())
             result = self.game_state.attack(0, attack)
@@ -113,6 +110,8 @@ class Coordinator(Agent):
 
     @loop
     async def play_games(self, shutdown: asyncio.Event) -> None:
+        from academy_tutorial.battleship import Game
+
         while not shutdown.is_set():
             logger.info('Starting game.')
             player_0_board = await (await self.player_0.new_game(self.ships))
