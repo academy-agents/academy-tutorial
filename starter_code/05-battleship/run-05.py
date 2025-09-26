@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+from concurrent.futures import ProcessPoolExecutor
 import logging
+import multiprocessing
+import os
 import random
-from typing import ClassVar, Literal
+from typing import ClassVar
+from typing import Literal
 
 from academy.agent import action
 from academy.agent import Agent
@@ -12,7 +16,7 @@ from academy.exchange.cloud import HttpExchangeFactory
 from academy.handle import Handle
 from academy.logging import init_logging
 from academy.manager import Manager
-from globus_compute_sdk import Executor
+from globus_compute_sdk import GCExecutor
 
 from academy_tutorial.battleship import Board
 from academy_tutorial.battleship import Crd
@@ -34,38 +38,38 @@ class BattleshipPlayer(Agent):
 
     @action
     async def get_move(self) -> Crd:
+        """Choose a new attack.
+        
+        Returns:
+            The coordinates to launch an attack.    
+        """
         from academy_tutorial.battleship import Crd
-        import asyncio
-        import random
 
-        await asyncio.sleep(1)
-        while True:
-            row = random.randint(0, self.guesses.size - 1)
-            col = random.randint(0, self.guesses.size - 1)
-            if self.guesses.receive_attack(Crd(row, col)) != 'guessed':
-                return Crd(row, col)
-    
+        # TODO: Implement an attack strategy
+
     @action
     async def notify_result(self, loc: Crd, result: Literal["hit", "miss", "guessed"]):
-        # Naive player does not keep track of results
         return 
 
     @action
     async def notify_move(self, loc: Crd) -> None:
-        # Naive player does not keep track of where guesses
-        # happen
         return
 
     @action
     async def new_game(self, ships: list[int], size: int = 10) -> Board:
+        """Start a new game.
+
+        Args:
+            ships: The list of ships to place.
+            size: The size of the board.
+
+        Returns:
+            A new board with all the ships placed.
+        """
         from academy_tutorial.battleship import Board
         from academy_tutorial.battleship import Crd
 
-        self.guesses = Board(size)
-        my_board = Board(size)
-        for i, ship in enumerate(ships):
-            my_board.place_ship(Crd(i, 0), ship, 'horizontal')
-        return my_board
+        # TODO: Implement a strategy for placing the ships
 
 
 class Coordinator(Agent):
@@ -91,17 +95,17 @@ class Coordinator(Agent):
 
     async def game(self, shutdown: asyncio.Event) -> int:
         while not shutdown.is_set():
-            attack = await (await self.player_0.get_move())
+            attack = await self.player_0.get_move()
             result = self.game_state.attack(0, attack)
-            await (await self.player_0.notify_result(attack, result))
-            await (await self.player_1.notify_move(attack))
+            await self.player_0.notify_result(attack, result)
+            await self.player_1.notify_move(attack)
             if self.game_state.check_winner() >= 0:
                 return self.game_state.check_winner()
 
-            attack = await (await self.player_1.get_move())
+            attack = await self.player_1.get_move()
             result = self.game_state.attack(1, attack)
-            await (await self.player_1.notify_result(attack, result))
-            await (await self.player_0.notify_move(attack))
+            await self.player_1.notify_result(attack, result)
+            await self.player_0.notify_move(attack)
             if self.game_state.check_winner() >= 0:
                 return self.game_state.check_winner()
 
@@ -113,11 +117,15 @@ class Coordinator(Agent):
         from academy_tutorial.battleship import Game
         
         while not shutdown.is_set():
-            player_0_board = await (await self.player_0.new_game(self.ships))
-            player_1_board = await (await self.player_1.new_game(self.ships))
+            player_0_board = await self.player_0.new_game(self.ships)
+            player_1_board = await self.player_1.new_game(self.ships)
             self.game_state = Game(player_0_board, player_1_board)
             winner = await self.game(shutdown)
             self.stats[winner] += 1
+
+    @action
+    async def get_game_state(self) -> Game | None:
+        return self.game_state
 
     @action
     async def get_game_state(self) -> Game | None:
@@ -131,21 +139,23 @@ class Coordinator(Agent):
 async def main() -> int:
     init_logging(logging.INFO)
 
-    # Use the chameleon instance for execution.
-    executor = Executor(TUTORIAL_ENDPOINT_UUID)
-
-    # Use the hosted exchange with globus auth.
-    factory = HttpExchangeFactory(
-        url=EXCHANGE_ADDRESS,
-        auth_method='globus',
-    )
+    if "ACADEMY_TUTORIAL_ENDPOINT" in os.environ:
+        executor = GCExecutor(os.environ['ACADEMY_TUTORIAL_ENDPOINT'])
+    else:
+        mp_context = multiprocessing.get_context('spawn')
+        executor = ProcessPoolExecutor(
+            max_workers=3,
+            initializer=init_logging,
+            mp_context=mp_context,
+        )
 
     async with await Manager.from_exchange_factory(
-        factory=factory,
+        factory=HttpExchangeFactory("https://exchange.academy-agents.org", auth_method="globus"),
         # Agents are run by the manager in the processes of this
         # process pool executor.
         executors=executor,
     ) as manager:
+        
         # Launch each of the three agents, each implementing a different
         # behavior. The returned type is a handle to that agent used to
         # invoke actions.
@@ -164,17 +174,14 @@ async def main() -> int:
                 'Enter command (exit, game, stat): ',
             )
             if user_input.lower() == 'exit':
-                print('Exiting... attempting shutdown')
-                await coordinator.shutdown()
-                await player_1.shutdown()
-                await player_2.shutdown()
+                print('Exiting...')
                 break
             elif user_input.lower() == 'game':
-                game = await (await coordinator.get_game_state())
+                game = await coordinator.get_game_state()
                 print('Current Game State: ')
                 print(game)
             elif user_input.lower() == 'stat':
-                stats = await (await coordinator.get_player_stats())
+                stats = await coordinator.get_player_stats()
                 print(f'Player 0 has won {stats[0]} games')
                 print(f'Player 1 has won {stats[1]} games')
             else:

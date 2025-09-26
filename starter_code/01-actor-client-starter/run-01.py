@@ -24,8 +24,8 @@ async def main() -> int:
     init_logging(logging.INFO)
 
     async with await Manager.from_exchange_factory(
-        exchage = # TODO: Use local exchange,
-        launcher = # TODO: Use thread pool launcher
+        factory = # TODO: Use local exchange,
+        executors = # TODO: Use thread pool launcher
     ) as manager:
         
         # TODO: Launch agent using manager.launch

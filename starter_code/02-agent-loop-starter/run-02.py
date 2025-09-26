@@ -6,10 +6,11 @@ from concurrent.futures import ThreadPoolExecutor
 
 from academy.agent import action
 from academy.agent import Agent
-from academy.exchange.local import LocalExchangeFactory
+from academy.exchange import LocalExchangeFactory
 from academy.logging import init_logging
 from academy.manager import Manager
 
+logger = logging.getLogger(__name__)
 
 class Counter(Agent):
     count: int
@@ -17,7 +18,8 @@ class Counter(Agent):
     async def agent_on_startup(self) -> None:
         self.count = 0
 
-    @action
+    # TODO: Change this method to a loop that increments every second.
+    @action 
     async def increment(self, value: int = 1) -> None:
         self.count += value
 
@@ -33,18 +35,14 @@ async def main() -> int:
         factory=LocalExchangeFactory(),
         executors=ThreadPoolExecutor(),
     ) as manager:
-        agent_handle = await manager.launch(Counter)
+        agent = await manager.launch(Counter)
 
-        count_future = await agent_handle.get_count()
-        await count_future
-        assert count_future.result() == 0
+        logger.info('Waiting 2s for agent loops to execute...')
+        await asyncio.sleep(2)
 
-        inc_future = await agent_handle.increment()
-        await inc_future
-
-        count_future = await agent_handle.get_count()
-        await count_future
-        assert count_future.result() == 1
+        count = await agent.get_count()
+        assert count >= 1
+        logger.info('Agent loop executed %s time(s)', count)
 
     return 0
 
