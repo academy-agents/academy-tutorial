@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-from concurrent.futures import ProcessPoolExecutor
 import logging
 import multiprocessing
 import os
-import random
+from concurrent.futures import ProcessPoolExecutor
 from typing import ClassVar
 from typing import Literal
 
@@ -16,7 +15,7 @@ from academy.exchange.cloud import HttpExchangeFactory
 from academy.handle import Handle
 from academy.logging import init_logging
 from academy.manager import Manager
-from globus_compute_sdk import GCExecutor
+from globus_compute_sdk import Executor as GCExecutor
 
 from academy_tutorial.battleship import Board
 from academy_tutorial.battleship import Crd
@@ -39,17 +38,20 @@ class BattleshipPlayer(Agent):
     @action
     async def get_move(self) -> Crd:
         """Choose a new attack.
-        
+
         Returns:
-            The coordinates to launch an attack.    
+            The coordinates to launch an attack.
         """
-        from academy_tutorial.battleship import Crd
 
         # TODO: Implement an attack strategy
 
     @action
-    async def notify_result(self, loc: Crd, result: Literal["hit", "miss", "guessed"]):
-        return 
+    async def notify_result(
+        self,
+        loc: Crd,
+        result: Literal['hit', 'miss', 'guessed'],
+    ):
+        return
 
     @action
     async def notify_move(self, loc: Crd) -> None:
@@ -66,8 +68,6 @@ class BattleshipPlayer(Agent):
         Returns:
             A new board with all the ships placed.
         """
-        from academy_tutorial.battleship import Board
-        from academy_tutorial.battleship import Crd
 
         # TODO: Implement a strategy for placing the ships
 
@@ -113,19 +113,14 @@ class Coordinator(Agent):
 
     @loop
     async def play_games(self, shutdown: asyncio.Event) -> None:
-        from academy_tutorial.battleship import Board
         from academy_tutorial.battleship import Game
-        
+
         while not shutdown.is_set():
             player_0_board = await self.player_0.new_game(self.ships)
             player_1_board = await self.player_1.new_game(self.ships)
             self.game_state = Game(player_0_board, player_1_board)
             winner = await self.game(shutdown)
             self.stats[winner] += 1
-
-    @action
-    async def get_game_state(self) -> Game | None:
-        return self.game_state
 
     @action
     async def get_game_state(self) -> Game | None:
@@ -139,7 +134,7 @@ class Coordinator(Agent):
 async def main() -> int:
     init_logging(logging.INFO)
 
-    if "ACADEMY_TUTORIAL_ENDPOINT" in os.environ:
+    if 'ACADEMY_TUTORIAL_ENDPOINT' in os.environ:
         executor = GCExecutor(os.environ['ACADEMY_TUTORIAL_ENDPOINT'])
     else:
         mp_context = multiprocessing.get_context('spawn')
@@ -150,12 +145,14 @@ async def main() -> int:
         )
 
     async with await Manager.from_exchange_factory(
-        factory=HttpExchangeFactory("https://exchange.academy-agents.org", auth_method="globus"),
+        factory=HttpExchangeFactory(
+            'https://exchange.academy-agents.org',
+            auth_method='globus',
+        ),
         # Agents are run by the manager in the processes of this
         # process pool executor.
         executors=executor,
     ) as manager:
-        
         # Launch each of the three agents, each implementing a different
         # behavior. The returned type is a handle to that agent used to
         # invoke actions.

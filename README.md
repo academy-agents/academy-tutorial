@@ -9,7 +9,7 @@ This tutorial provides a step by step introduction of Academy, from building a s
 
 #### Install Tutorial Package
 
-Clone the repository from  github and install the tutorial package. The package will automatically install `academy` as well. We recommend completing the tutorial inside a virtual environment.
+Clone the repository from github and install the tutorial package. The package will automatically install `academy` as well.  The tutorial requires `python>=3.12`. We recommend completing the tutorial inside a virtual environment.
 ```
 git clone git@github.com:academy-agents/academy-tutorial.git
 cd academy-tutorial
@@ -33,8 +33,8 @@ export ACADEMY_TUTORIAL_ENDPOINT=<endpoint_id>
 ## Module 01: Simple Actor-Client Application:
 In the first module, we will write a simple example of launching a stateful actor and invoking actions from a user program.
 
-The starter code contains an outline of an `Agent` class and a `Manager` class. In the `Counter` agent class add two new functions `increment` and `get_count` annotated with `@action` decorator. 
-In the `manager` context, first fill in the `factory` and the `executors` arguments. Then use `manager.launch` to launch the counter agent, and create a handle to the newly launched agent. To veryify that the agent launched and is running call the `increment` and `get_count` methods of the agent using the handle.
+The starter code contains an outline of an `Agent` class and a `Manager` class. In the `Counter` agent class add two new functions `increment` and `get_count` annotated with `@action` decorator.
+In the `manager` context, first fill in the `factory` and the `executors` arguments. Then use `manager.launch` to launch the counter agent, and create a handle to the newly launched agent. To verify that the agent launched and is running call the `increment` and `get_count` methods of the agent using the handle.
 
 To run the script:
 ```
