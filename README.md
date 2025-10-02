@@ -29,7 +29,13 @@ export ACADEMY_TUTORIAL_ENDPOINT=<endpoint_id>
 (If you are completing this tutorial with the Academy team, we will provide access to a Globus Compute Endpoint that you can use.)
 
 ---
+## Helpful links
 
+* [Example](https://docs.academy-agents.org/stable/#example): shows basic usage of most classes and methods needed in this tutorial
+* [Getting started guide](https://docs.academy-agents.org/main/get-started/): an annotated example demonstrating basic features of Academy
+* [API reference](https://docs.academy-agents.org/main/api/): detailed reference for Academy
+
+---
 ## Module 01: Simple Actor-Client Application:
 In the first module, we will write a simple example of launching a stateful actor and invoking actions from a user program.
 
