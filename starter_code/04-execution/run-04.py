@@ -51,23 +51,20 @@ async def main() -> int:
     init_logging(logging.INFO)
 
     if 'ACADEMY_TUTORIAL_ENDPOINT' in os.environ:
-        executor = GCExecutor(os.environ['ACADEMY_TUTORIAL_ENDPOINT'])
+        endpoint = os.environ['ACADEMY_TUTORIIAL_ENDPOINT']
+        executor # TODO: create a GCExecutor with this endpoint as its argument
     else:
         mp_context = multiprocessing.get_context('spawn')
-        executor = ProcessPoolExecutor(
-            max_workers=3,
+        executor_kwargs = dict(max_workers=3,
             initializer=init_logging,
-            mp_context=mp_context,
-        )
+            mp_context=mp_context,)
+        executor = # TODO: create a ProcessPoolExecutor with the above kwargs
 
+
+    exchange_url='https://exchange.academy-agents.org'
     async with await Manager.from_exchange_factory(
-        factory=HttpExchangeFactory(
-            'https://exchange.academy-agents.org',
-            auth_method='globus',
-        ),
-        # Agents are run by the manager in the processes of this
-        # process pool executor.
-        executors=executor,
+        factory=# TODO: create an HTTPSExchangeFactory associated with exchange_url and with auth_method='globus'
+        executors=# TODO: pass the executor created above
     ) as manager:
         # Launch each of the three agents types. The returned type is
         # a handle to that agent used to invoke actions.
