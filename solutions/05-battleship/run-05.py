@@ -22,8 +22,7 @@ from academy_tutorial.battleship import Board
 from academy_tutorial.battleship import Crd
 from academy_tutorial.battleship import Game
 
-EXCHANGE_ADDRESS = 'https://exchange.proxystore.dev'
-TUTORIAL_ENDPOINT_UUID = '707fe7ed-6f06-4ec3-877f-1c1f0e9aeb84'
+EXCHANGE_ADDRESS = 'https://exchange.academy-agents.org'
 logger = logging.getLogger(__name__)
 
 
@@ -150,7 +149,7 @@ async def main() -> int:
 
     async with await Manager.from_exchange_factory(
         factory=HttpExchangeFactory(
-            'https://exchange.academy-agents.org',
+            EXCHANGE_ADDRESS,
             auth_method='globus',
         ),
         # Agents are run by the manager in the processes of this

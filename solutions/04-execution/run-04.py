@@ -14,7 +14,7 @@ from academy.logging import init_logging
 from academy.manager import Manager
 from globus_compute_sdk import Executor as GCExecutor
 
-EXCHANGE_PORT = 5346
+EXCHANGE_ADDRESS = 'https://exchange.academy-agents.org'
 logger = logging.getLogger(__name__)
 
 
@@ -62,7 +62,7 @@ async def main() -> int:
 
     async with await Manager.from_exchange_factory(
         factory=HttpExchangeFactory(
-            'https://exchange.academy-agents.org',
+            EXCHANGE_ADDRESS,
             auth_method='globus',
         ),
         # Agents are run by the manager in the processes of this
