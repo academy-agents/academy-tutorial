@@ -34,6 +34,8 @@ dev = [
     "mypy",
     "pre-commit",
     "ruff>=0.2.0",
+    "pytest",
+    "pytest-asyncio>=1.1",
 ]
 
 [tool.codespell]
@@ -150,7 +152,7 @@ multiline-quotes = "double"
 
 [tool.ruff.lint.isort]
 force-single-line = true
-known-first-party = ["academy_tutorial"]
+known-first-party = ["academy_tutorial", "tests"]
 order-by-type = false
 required-imports = ["from __future__ import annotations"]
 
@@ -166,4 +168,5 @@ convention = "google"
 
 [tool.setuptools.packages.find]
 include = ["academy_tutorial"]
+exclude = ["tests*", "testing*"]
 namespaces = false
