@@ -152,12 +152,13 @@ multiline-quotes = "double"
 
 [tool.ruff.lint.isort]
 force-single-line = true
-known-first-party = ["academy_tutorial", "tests"]
+known-first-party = ["academy_tutorial", "tests", "testing"]
 order-by-type = false
 required-imports = ["from __future__ import annotations"]
 
 [tool.ruff.lint.per-file-ignores]
 "*/__init__.py" = ["F401"]
+"testing/*" = ["D101", "D102"]
 "tests/conftest.py" = ["F401"]
 "*/*_test.py" = ["D10"]
 "solutions/*" = ["D"]
