@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import random
 from typing import Literal
 
@@ -20,7 +19,6 @@ class MyBattleshipPlayer(BattleshipPlayer):
 
     @action
     async def get_move(self) -> Crd:
-        await asyncio.sleep(1)
         while True:
             row = random.randint(0, self.guesses.size - 1)
             col = random.randint(0, self.guesses.size - 1)

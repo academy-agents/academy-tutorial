@@ -8,7 +8,6 @@ from academy.agent import Agent
 from academy.agent import loop
 from academy.handle import Handle
 
-from academy_tutorial.battleship import Board
 from academy_tutorial.battleship import Game
 from academy_tutorial.player import BattleshipPlayer
 
@@ -37,12 +36,18 @@ class Coordinator(Agent):
         super().__init__()
         self.player_0 = player_0
         self.player_1 = player_1
-        self.game_state = Game(Board(), Board())
+        self.game_state: Game | None = None
         self.ships = ships or self._default_ships
         self.stats = [0, 0]
 
     async def game(self, shutdown: asyncio.Event) -> int:
         """Play a single game between the players."""
+        player_0_board = await self.player_0.new_game(self.ships)
+        player_1_board = await self.player_1.new_game(self.ships)
+        self.game_state = Game(player_0_board, player_1_board)
+
+        assert self.game_state is not None
+
         while not shutdown.is_set():
             attack = await self.player_0.get_move()
             result = self.game_state.attack(0, attack)
@@ -64,9 +69,6 @@ class Coordinator(Agent):
     async def play_games(self, shutdown: asyncio.Event) -> None:
         """Play a games until the agent is shutdown."""
         while not shutdown.is_set():
-            player_0_board = await self.player_0.new_game(self.ships)
-            player_1_board = await self.player_1.new_game(self.ships)
-            self.game_state = Game(player_0_board, player_1_board)
             winner = await self.game(shutdown)
             self.stats[winner] += 1
 

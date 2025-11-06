@@ -6,8 +6,9 @@ from typing import Literal
 
 from academy.agent import action
 from academy.agent import Agent
-from battleship import Board
-from battleship import Crd
+
+from academy_tutorial.battleship import Board
+from academy_tutorial.battleship import Crd
 
 
 class BattleshipPlayer(Agent, ABC):
@@ -29,7 +30,7 @@ class BattleshipPlayer(Agent, ABC):
         self,
         loc: Crd,
         result: Literal['hit', 'miss', 'guessed'],
-    ):
+    ) -> None:
         """Called to notify player of result of last move."""
         return
 
