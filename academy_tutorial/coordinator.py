@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import ClassVar
 
 from academy.agent import action
@@ -10,6 +11,8 @@ from academy.handle import Handle
 
 from academy_tutorial.battleship import Game
 from academy_tutorial.player import BattleshipPlayer
+
+logger = logging.getLogger()
 
 
 class Coordinator(Agent):
@@ -42,14 +45,17 @@ class Coordinator(Agent):
 
     async def game(self, shutdown: asyncio.Event) -> int:
         """Play a single game between the players."""
+        logger.info('Initializing game.')
         player_0_board = await self.player_0.new_game(self.ships)
         player_1_board = await self.player_1.new_game(self.ships)
         self.game_state = Game(player_0_board, player_1_board)
 
+        logger.info('Starting game.')
         assert self.game_state is not None
 
         while not shutdown.is_set():
             attack = await self.player_0.get_move()
+            logger.info(f'Recieved move {attack}')
             result = self.game_state.attack(0, attack)
             await self.player_0.notify_result(attack, result)
             await self.player_1.notify_move(attack)
@@ -57,6 +63,7 @@ class Coordinator(Agent):
                 return self.game_state.check_winner()
 
             attack = await self.player_1.get_move()
+            logger.info(f'Recieved move {attack}')
             result = self.game_state.attack(1, attack)
             await self.player_1.notify_result(attack, result)
             await self.player_0.notify_move(attack)
@@ -70,7 +77,13 @@ class Coordinator(Agent):
         """Play a games until the agent is shutdown."""
         while not shutdown.is_set():
             winner = await self.game(shutdown)
-            self.stats[winner] += 1
+
+            if winner >= 0:
+                self.stats[winner] += 1
+            else:
+                break
+
+            await asyncio.sleep(0.0)
 
     @action
     async def get_game_state(self) -> Game | None:

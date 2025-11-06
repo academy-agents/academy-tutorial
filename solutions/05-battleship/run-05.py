@@ -4,7 +4,6 @@ import asyncio
 import logging
 import multiprocessing
 import os
-import random
 from concurrent.futures import ProcessPoolExecutor
 from typing import Literal
 
@@ -27,11 +26,18 @@ class MyBattleshipPlayer(BattleshipPlayer):
     def __init__(
         self,
     ) -> None:
+        from academy_tutorial.battleship import Board  # noqa: PLC0415
+
         super().__init__()
         self.guesses = Board()
 
     @action
     async def get_move(self) -> Crd:
+        import asyncio  # noqa: PLC0415
+        import random  # noqa: PLC0415
+
+        from academy_tutorial.battleship import Crd  # noqa: PLC0415
+
         await asyncio.sleep(1)
         while True:
             row = random.randint(0, self.guesses.size - 1)
@@ -44,7 +50,7 @@ class MyBattleshipPlayer(BattleshipPlayer):
         self,
         loc: Crd,
         result: Literal['hit', 'miss', 'guessed'],
-    ):
+    ) -> None:
         # Naive player does not keep track of results
         return
 
@@ -56,6 +62,9 @@ class MyBattleshipPlayer(BattleshipPlayer):
 
     @action
     async def new_game(self, ships: list[int], size: int = 10) -> Board:
+        from academy_tutorial.battleship import Board  # noqa: PLC0415
+        from academy_tutorial.battleship import Crd  # noqa: PLC0415
+
         self.guesses = Board(size)
         my_board = Board(size)
         for i, ship in enumerate(ships):
@@ -67,7 +76,9 @@ async def main() -> int:
     init_logging(logging.INFO)
 
     if 'ACADEMY_TUTORIAL_ENDPOINT' in os.environ:
-        executor = GCExecutor(os.environ['ACADEMY_TUTORIAL_ENDPOINT'])
+        executor = GCExecutor(
+            os.environ['ACADEMY_TUTORIAL_ENDPOINT'],
+        )
     else:
         mp_context = multiprocessing.get_context('spawn')
         executor = ProcessPoolExecutor(
@@ -87,10 +98,14 @@ async def main() -> int:
     ) as manager:
         player_1 = await manager.launch(MyBattleshipPlayer)
         player_2 = await manager.launch(MyBattleshipPlayer)
+        await player_1.ping()
+        await player_2.ping()
+
         coordinator = await manager.launch(
             Coordinator,
             args=(player_1, player_2),
         )
+        await coordinator.ping()
 
         loop = asyncio.get_event_loop()
         while True:

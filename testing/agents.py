@@ -15,15 +15,13 @@ class MyBattleshipPlayer(BattleshipPlayer):
         self,
     ) -> None:
         super().__init__()
-        self.guesses = Board()
+        self.not_guessed: set[Crd] = set()
 
     @action
     async def get_move(self) -> Crd:
-        while True:
-            row = random.randint(0, self.guesses.size - 1)
-            col = random.randint(0, self.guesses.size - 1)
-            if self.guesses.receive_attack(Crd(row, col)) != 'guessed':
-                return Crd(row, col)
+        guess = random.choice(list(self.not_guessed))
+        self.not_guessed.remove(guess)
+        return guess
 
     @action
     async def notify_result(
@@ -39,7 +37,9 @@ class MyBattleshipPlayer(BattleshipPlayer):
 
     @action
     async def new_game(self, ships: list[int], size: int = 10) -> Board:
-        self.guesses = Board(size)
+        self.not_guessed = {
+            Crd(i, j) for i in range(size) for j in range(size)
+        }
         my_board = Board(size)
         for i, ship in enumerate(ships):
             my_board.place_ship(Crd(i, 0), ship, 'horizontal')

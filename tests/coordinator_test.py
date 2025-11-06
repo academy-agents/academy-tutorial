@@ -43,3 +43,15 @@ async def test_coordinator_game(coordinator):
 
     loser = 1 - winner
     assert state.boards[loser].all_ships_sunk()
+
+
+@pytest.mark.asyncio
+async def test_coordinator_play_games(coordinator):
+    shutdown_event = asyncio.Event()
+    task = asyncio.create_task(coordinator.play_games(shutdown_event))
+    await asyncio.sleep(0.1)
+    stats = await coordinator.get_player_stats()
+    assert stats[0] + stats[1] > 0
+
+    shutdown_event.set()
+    await task

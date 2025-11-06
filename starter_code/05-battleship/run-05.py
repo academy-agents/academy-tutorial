@@ -27,6 +27,8 @@ class MyBattleshipPlayer(BattleshipPlayer):
     def __init__(
         self,
     ) -> None:
+        from academy_tutorial.battleship import Board  # noqa: PLC0415
+
         super().__init__()
         self.guesses = Board()
 
@@ -39,6 +41,7 @@ class MyBattleshipPlayer(BattleshipPlayer):
         """
 
         # TODO: Implement an attack strategy
+        ...
 
     @action
     async def notify_result(
@@ -65,6 +68,7 @@ class MyBattleshipPlayer(BattleshipPlayer):
         """
 
         # TODO: Implement a strategy for placing the ships
+        ...
 
 
 async def main() -> int:
@@ -89,10 +93,14 @@ async def main() -> int:
     ) as manager:
         player_1 = await manager.launch(MyBattleshipPlayer)
         player_2 = await manager.launch(MyBattleshipPlayer)
+        await player_1.ping()
+        await player_2.ping()
+
         coordinator = await manager.launch(
             Coordinator,
             args=(player_1, player_2),
         )
+        await coordinator.ping()
 
         loop = asyncio.get_event_loop()
         while True:
