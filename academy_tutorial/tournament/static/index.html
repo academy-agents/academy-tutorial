@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Battleship Tournament Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>🚢 Battleship Tournament Dashboard</h1>
+    <div id="agent-id-banner">
+      Agent ID: <span id="agent-id">Loading...</span>
+    </div>
+  </header>
+
+  <main>
+    <section id="rankings">
+      <h2>Rankings</h2>
+      <table id="rankings-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Name</th>
+            <th>Wins</th>
+            <th>Games</th>
+            <th>Win Rate</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section id="matchups">
+      <h2>Current Matchups</h2>
+      <ul id="matchups-list"></ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>Updated every 5 seconds | Battleship Tournament</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
