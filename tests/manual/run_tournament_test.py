@@ -7,6 +7,8 @@ from typing import Literal
 
 from academy.agent import action
 from academy.exchange import HttpExchangeFactory
+from academy.exchange.cloud.client import spawn_http_exchange
+from academy.socket import open_port
 from academy.logging import init_logging
 from academy.manager import Manager
 
@@ -56,55 +58,48 @@ class MyBattleshipPlayer(BattleshipPlayer):
 
 async def main():
     init_logging(logging.INFO)
-    factory = HttpExchangeFactory(
-        'https://exchange.academy-agents.org',
-        auth_method='globus',
-    )
+    with spawn_http_exchange("localhost", open_port()) as factory:
+        async with await Manager.from_exchange_factory(
+            factory=factory,
+        ) as manager:
+            tournament = await manager.launch(TournamentAgent)
 
-    # loop = asyncio.get_event_loop()
-    # loop.set_debug(True)
+            players = []
+            for i in range(4):
+                player = await manager.launch(MyBattleshipPlayer)
+                await player.ping()
+                players.append(player)
+                await tournament.register_player(player, f'player-{i}')
+                await asyncio.sleep(0.2)
 
-    async with await Manager.from_exchange_factory(
-        factory=factory,
-    ) as manager:
-        tournament = await manager.launch(TournamentAgent)
+            await asyncio.sleep(1)
+            # import pdb; pdb.set_trace()
+            rankings = await tournament.get_players()
+            for i, player in enumerate(rankings):
+                print(
+                    f'{i}. {player["name"]}:\tWins: {player["wins"]}'
+                    f'\tGames: {player["games"]}'
+                    f'\tWin Rate: {player["win_rate"]}',
+                )
+            for player in players:
+                await player.shutdown()
 
-        players = []
-        for i in range(4):
-            player = await manager.launch(MyBattleshipPlayer)
-            await player.ping()
-            players.append(player)
-            await tournament.register_player(player, f'player-{i}')
-            await asyncio.sleep(0.2)
+            for i in range(4, 8):
+                player = await manager.launch(MyBattleshipPlayer)
+                await player.ping()
+                logger.info('Registering player.')
+                await tournament.register_player(player, f'player-{i}')
+                logger.info('Player registered.')
+                # await asyncio.sleep(0.0)
 
-        await asyncio.sleep(120)
-        # import pdb; pdb.set_trace()
-        rankings = await tournament.get_players()
-        for i, player in enumerate(rankings):
-            print(
-                f'{i}. {player["name"]}:\tWins: {player["wins"]}'
-                f'\tGames: {player["games"]}'
-                f'\tWin Rate: {player["win_rate"]}',
-            )
-        for player in players:
-            await player.shutdown()
-
-        for i in range(4, 8):
-            player = await manager.launch(MyBattleshipPlayer)
-            await player.ping()
-            logger.info('Registering player.')
-            await tournament.register_player(player, f'player-{i}')
-            logger.info('Player registered.')
-            await asyncio.sleep(0.2)
-
-        await asyncio.sleep(120)
-        rankings = await tournament.get_players()
-        for i, player in enumerate(rankings):
-            print(
-                f'{i}. {player["name"]}:\tWins: {player["wins"]}'
-                f'\tGames: {player["games"]}'
-                f'\tWin Rate: {player["win_rate"]}',
-            )
+            await asyncio.sleep(3)
+            rankings = await tournament.get_players()
+            for i, player in enumerate(rankings):
+                print(
+                    f'{i}. {player["name"]}:\tWins: {player["wins"]}'
+                    f'\tGames: {player["games"]}'
+                    f'\tWin Rate: {player["win_rate"]}',
+                )
 
 
 if __name__ == '__main__':
