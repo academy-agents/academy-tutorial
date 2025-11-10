@@ -6,11 +6,10 @@ import random
 from typing import Literal
 
 from academy.agent import action
-from academy.exchange import HttpExchangeFactory
 from academy.exchange.cloud.client import spawn_http_exchange
-from academy.socket import open_port
 from academy.logging import init_logging
 from academy.manager import Manager
+from academy.socket import open_port
 
 from academy_tutorial.battleship import Board
 from academy_tutorial.battleship import Crd
@@ -58,7 +57,7 @@ class MyBattleshipPlayer(BattleshipPlayer):
 
 async def main():
     init_logging(logging.INFO)
-    with spawn_http_exchange("localhost", open_port()) as factory:
+    with spawn_http_exchange('localhost', open_port()) as factory:
         async with await Manager.from_exchange_factory(
             factory=factory,
         ) as manager:
@@ -92,7 +91,7 @@ async def main():
                 logger.info('Player registered.')
                 # await asyncio.sleep(0.0)
 
-            await asyncio.sleep(3)
+            await asyncio.sleep(10)
             rankings = await tournament.get_players()
             for i, player in enumerate(rankings):
                 print(

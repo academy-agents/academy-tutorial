@@ -38,7 +38,7 @@ class PlayerInfo:
 class TournamentAgent(Agent):
     """Play battleship agents against one another."""
 
-    timeout: ClassVar[float] = 0.1
+    timeout: ClassVar[float] = 0.25
     ships: ClassVar[list[int]] = [5, 5, 4, 3, 2]
 
     def __init__(self) -> None:
@@ -77,11 +77,6 @@ class TournamentAgent(Agent):
         async with self.new_players:
             self.registered_players[name] = PlayerInfo(player)
             self.round_num = 1  # Reset round num so everyone plays everyone
-
-            # # Shuffle players so we don't get stuck with the same matchups
-            # players = list(self.registered_players.items())
-            # random.shuffle(players)
-            # self.registered_players = dict(players)
             self.new_players.notify()
 
         logger.info('Registered player.')
