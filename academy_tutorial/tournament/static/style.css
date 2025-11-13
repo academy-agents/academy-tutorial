@@ -1,0 +1,90 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(to bottom right, #0b132b, #1c2541);
+  color: #f0f0f0;
+  margin: 0;
+  padding: 0;
+}
+
+header {
+  background: #3a506b;
+  padding: 1rem;
+  text-align: center;
+  color: #ffffff;
+}
+
+#agent-id-banner {
+  background-color: #5bc0be;
+  color: #0b132b;
+  font-weight: bold;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  display: inline-block;
+  font-size: 1.1rem;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+}
+
+section {
+  background: #1c2541;
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 90%;
+  max-width: 800px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  margin-bottom: 2rem;
+}
+
+h2 {
+  border-bottom: 2px solid #5bc0be;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 0.75rem;
+  text-align: center;
+}
+
+th {
+  background-color: #3a506b;
+}
+
+tr:nth-child(even) {
+  background-color: #0b132b;
+}
+
+tr:nth-child(odd) {
+  background-color: #1c2541;
+}
+
+#matchups-list {
+  list-style: none;
+  padding: 0;
+}
+
+#matchups-list li {
+  background: #3a506b;
+  margin: 0.5rem 0;
+  padding: 0.75rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+footer {
+  text-align: center;
+  padding: 1rem;
+  background: #3a506b;
+  color: #ffffff;
+}

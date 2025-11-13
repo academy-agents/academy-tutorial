@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import asyncio
-import random
+import time
 import warnings
+from asyncio.log import logger
 from collections.abc import Iterable
 from dataclasses import dataclass
 from dataclasses import field
@@ -37,7 +38,7 @@ class PlayerInfo:
 class TournamentAgent(Agent):
     """Play battleship agents against one another."""
 
-    timeout: ClassVar[float] = 0.1
+    timeout: ClassVar[float] = 0.25
     ships: ClassVar[list[int]] = [5, 5, 4, 3, 2]
 
     def __init__(self) -> None:
@@ -65,19 +66,20 @@ class TournamentAgent(Agent):
         name: str,
     ) -> None:
         """Register a player for the tournament."""
+        logger.info('Registering player.')
+
         await self.test_player(player)
         assert name not in self.registered_players, (
             'Player name has been registered. Choose another display name.'
         )
+
+        logger.info('Locking condition variable.')
         async with self.new_players:
             self.registered_players[name] = PlayerInfo(player)
             self.round_num = 1  # Reset round num so everyone plays everyone
-
-            # Shuffle players so we don't get stuck with the same matchups
-            players = list(self.registered_players.items())
-            random.shuffle(players)
-            self.registered_players = dict(players)
             self.new_players.notify()
+
+        logger.info('Registered player.')
 
     @action
     async def get_players(self) -> list[dict[str, Any]]:
@@ -223,8 +225,6 @@ class TournamentAgent(Agent):
                 )
                 return 1
 
-            await asyncio.sleep(0.0)
-
         return -1
 
     @loop
@@ -232,6 +232,7 @@ class TournamentAgent(Agent):
         """Continuously play games in tournament."""
         while not shutdown.is_set():
             # Get the current players for the round
+            start = time.time()
             async with self.new_players:
                 while True:
                     cur_players = list(self.registered_players.keys())
@@ -241,7 +242,9 @@ class TournamentAgent(Agent):
                     if len(self.matchups) > 0:
                         break
                     else:
+                        logger.info('Wating for condition variable')
                         await self.new_players.wait()
+                        logger.info('Woke up!')
 
                 self.round_num += 1
 
@@ -274,4 +277,6 @@ class TournamentAgent(Agent):
                 loser.games += 1
                 loser.previous_matchups.append((winner_name, 0))
 
+            round_time = time.time() - start
+            logger.info(f'Round took {round_time} seconds')
             await asyncio.sleep(0.1)  # Rate limit between rounds.
