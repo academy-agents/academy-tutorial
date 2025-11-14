@@ -104,6 +104,11 @@ async def main() -> None:
         executors=ThreadPoolExecutor(),
     ) as manager:
         tournament = await manager.launch(TournamentAgent)
+        console = await factory.console()
+        await console.share_mailbox(
+            tournament.agent_id,
+            uuid.UUID('47697db5-c19f-11f0-981f-0ee9d7d7fffb'),
+        )
         print(f'Tournament Agent Id: {tournament.agent_id.uid}')
 
         app = await create_app(tournament.agent_id)
