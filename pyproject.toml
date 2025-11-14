@@ -24,7 +24,7 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
-    "academy-py>=0.3.0",
+    "academy-py @ git+https://github.com/academy-agents/academy.git@yadu/add_groups_support_to_mailboxes",
     "emoji",
     "globus-compute-sdk"
 ]
