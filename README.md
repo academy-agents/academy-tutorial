@@ -72,7 +72,7 @@ python run-03.py
 
 ---
 ## Module 04: Distributing Computation
-Academy integrates with a cloud hosted exchange and `globus compute` to build distributed agentic systems. 
+Academy integrates with a cloud hosted exchange and `globus compute` to build distributed agentic systems.
 In the starter code for Module 04, fill in the constructor of an executor used to launch agents with the `GCExecutor` (Globus Compute Executor) or a `ProcessPoolExecutor` if you do not have a Globus Compute Endpoint available. Then complete the Manager context with the appropriate fields. For the `factory` use the `HttpExchangeFactory` pointed at our hosted exchange `https:exchange.academy-agents.org` with `auth_method='globus'`. For the `executors` field use the `GCExecutor` or `ProcessPoolExecutor` you created above.
 This will enable you to launch the agents across distributed resources.
 
@@ -95,3 +95,19 @@ To run the script:
 ```
 python run-05.py
 ```
+
+### Entering the Battleship Tournament
+
+After you have implemented your BattleshipPlayer, you can enter the Battleship Tournament.
+Start by joining the [SC-Academy-Tutorial Globus Group](https://app.globus.org/groups/47697db5-c19f-11f0-981f-0ee9d7d7fffb/about).
+Then copy and paste the your agent into [`enter_tournament.py`](solutions/05-battleship/enter_tournament.py). Set the environment variables to tell your agent about the group and tournament agent, and run the script:
+```
+source tournament.env
+cd solutions/05-battleship
+python enter_tournament.py -n "<Your Name>"
+```
+
+**Behind the Scenes**
+
+The battleship tournament is enable via sharing agents through Globus Groups.
+You enter the tournament by sharing your agent with the group, then registering your player. The mechanics of this are handled by the `HttpExchangeConsole`. Look in to `enter_tournament.py` to explore how this is implemented.
