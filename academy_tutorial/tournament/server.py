@@ -4,14 +4,15 @@ import argparse
 import asyncio
 import logging
 import uuid
-from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 from academy.exchange import HttpExchangeFactory
+from academy.exchange.cloud.client import HttpAgentRegistration
 from academy.handle import Handle
 from academy.identifier import AgentId
 from academy.logging import init_logging
 from academy.manager import Manager
+from academy.runtime import RuntimeConfig
 from aiohttp import web
 
 from academy_tutorial.tournament.agent import TournamentAgent
@@ -92,18 +93,32 @@ def init_func(argv: str | None) -> web.Application:
     return asyncio.run(create_app(agent, args.exchange, auth_method))
 
 
-async def main() -> None:
+async def main(agent_id: str | None) -> None:
     """Launches the tournament agent and backend server."""
     init_logging(logging.INFO)
+
     factory = HttpExchangeFactory(
         'https://exchange.academy-agents.org',
         auth_method='globus',
     )
+
+    registration: HttpAgentRegistration[Any] | None = None
+    if agent_id is not None:
+        agent_id = AgentId(uid=uuid.UUID(agent_id))
+        registration = HttpAgentRegistration(
+            agent_id=agent_id,
+        )
     async with await Manager.from_exchange_factory(
         factory=factory,
-        executors=ThreadPoolExecutor(),
     ) as manager:
-        tournament = await manager.launch(TournamentAgent)
+        tournament = await manager.launch(
+            TournamentAgent,
+            config=RuntimeConfig(
+                terminate_on_success=False,
+                terminate_on_error=False,
+            ),
+            registration=registration,
+        )
         console = await factory.console()
         await console.share_mailbox(
             tournament.agent_id,
@@ -115,6 +130,8 @@ async def main() -> None:
         runner = web.AppRunner(app)
         await runner.setup()
         site = web.TCPSite(runner, '0.0.0.0', 9123)
+
+        print('Starting app!')
         await site.start()
 
         while True:
@@ -122,4 +139,15 @@ async def main() -> None:
 
 
 if __name__ == '__main__':
-    raise SystemExit(asyncio.run(main()))
+    parser = argparse.ArgumentParser(
+        description='Start the battlehsip tournament agent',
+    )
+    parser.add_argument(
+        '--agent_id',
+        '-a',
+        type=str,
+        help='ID of Agent if mailbox has been registered before.',
+    )
+    args = parser.parse_args()
+
+    raise SystemExit(asyncio.run(main(args.agent_id)))

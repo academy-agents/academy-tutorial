@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import argparse
 import asyncio
 import logging
+import os
 import uuid
 from typing import Literal
 
@@ -9,7 +11,6 @@ from academy.agent import action
 from academy.exchange.cloud import HttpExchangeFactory
 from academy.handle import Handle
 from academy.identifier import AgentId
-from academy.logging import init_logging
 from academy.manager import Manager
 
 from academy_tutorial.battleship import Board
@@ -68,8 +69,13 @@ class MyBattleshipPlayer(BattleshipPlayer):
         return my_board
 
 
-async def main() -> int:
-    init_logging(logging.INFO)
+async def main(name: str) -> int:
+    group_id = uuid.UUID(os.environ['ACADEMY_TUTORIAL_GROUP'])
+
+    tournament_aid = AgentId(
+        uid=uuid.UUID(os.environ['ACADEMY_TUTORIAL_TOURNAMENT_AGENT']),
+    )
+
     factory = HttpExchangeFactory(
         EXCHANGE_ADDRESS,
         auth_method='globus',
@@ -78,23 +84,37 @@ async def main() -> int:
         factory=factory,
     ) as manager:
         console = await factory.console()
-        player = await manager.launch(MyBattleshipPlayer)
-        group_id = uuid.UUID('47697db5-c19f-11f0-981f-0ee9d7d7fffb')
-        await player.ping()
+        player_hdl = await manager.launch(MyBattleshipPlayer)
+        await player_hdl.ping()
 
         await console.share_mailbox(manager.user_id, group_id)
-        await console.share_mailbox(player.agent_id, group_id)
+        await console.share_mailbox(player_hdl.agent_id, group_id)
 
-        tournament_aid = AgentId(
-            uid=uuid.UUID('a6a33dd5-1892-4e48-a2fc-cd7c1ec5a82f'),
-        )
         tournament = Handle(tournament_aid)
-        await tournament.register_player(player, 'dummy1')
+        await tournament.register_player(player_hdl, name)
 
-        await manager.wait((player,))
+        while True:
+            rankings = await tournament.get_players()
+            print('==================== Rankings ====================')
+            for i, player in enumerate(rankings):
+                print(
+                    f'{i}) {player["name"]}\tPercentage: {player["win_rate"]}',
+                )
+            await asyncio.sleep(30)
 
     return 0
 
 
 if __name__ == '__main__':
-    raise SystemExit(asyncio.run(main()))
+    parser = argparse.ArgumentParser(
+        description='Enter the battleship tournament',
+    )
+    parser.add_argument(
+        '--name',
+        '-n',
+        required=True,
+        help='Display name for your battleship player',
+    )
+    args = parser.parse_args()
+
+    raise SystemExit(asyncio.run(main(args.name)))
