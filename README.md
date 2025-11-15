@@ -26,7 +26,6 @@ To use the endpoint with the tutorial:
 export ACADEMY_TUTORIAL_ENDPOINT=<endpoint_id>
 ```
 
-(If you are completing this tutorial with the Academy team, we will provide access to a Globus Compute Endpoint that you can use.)
 
 ---
 ## Helpful links
