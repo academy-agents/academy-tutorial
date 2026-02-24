@@ -26,7 +26,8 @@ classifiers = [
 dependencies = [
     "academy-py>=0.3.1",
     "emoji",
-    "globus-compute-sdk"
+    "globus-compute-sdk",
+    "ipykernel>=7.2.0",
 ]
 
 [project.optional-dependencies]
@@ -36,6 +37,7 @@ dev = [
     "ruff>=0.2.0",
     "pytest",
     "pytest-asyncio>=1.1",
+    "nb-clean>=2.0.0",
 ]
 
 [tool.codespell]
@@ -171,3 +173,9 @@ convention = "google"
 include = ["academy_tutorial"]
 exclude = ["tests*", "testing*"]
 namespaces = false
+
+[dependency-groups]
+llm = [
+    "langchain>=1.2.10",
+    "langchain-openai>=1.1.10",
+]

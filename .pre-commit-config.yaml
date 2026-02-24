@@ -36,3 +36,7 @@ repos:
           - redis
           - requests
           - "tomli ; python_version<'3.11'"
+  - repo: https://github.com/srstevenson/nb-clean
+    rev: 4.0.1
+    hooks:
+      - id: nb-clean
