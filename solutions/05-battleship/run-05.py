@@ -9,7 +9,7 @@ from typing import Literal
 
 from academy.agent import action
 from academy.exchange.cloud import HttpExchangeFactory
-from academy.logging import init_logging
+from academy.logging.recommended import recommended_logging
 from academy.manager import Manager
 from globus_compute_sdk import Executor as GCExecutor
 
@@ -18,7 +18,6 @@ from academy_tutorial.battleship import Crd
 from academy_tutorial.coordinator import Coordinator
 from academy_tutorial.player import BattleshipPlayer
 
-EXCHANGE_ADDRESS = 'https://exchange.academy-agents.org'
 logger = logging.getLogger(__name__)
 
 
@@ -73,8 +72,6 @@ class MyBattleshipPlayer(BattleshipPlayer):
 
 
 async def main() -> int:
-    init_logging(logging.INFO)
-
     if 'ACADEMY_TUTORIAL_ENDPOINT' in os.environ:
         executor = GCExecutor(
             os.environ['ACADEMY_TUTORIAL_ENDPOINT'],
@@ -83,18 +80,15 @@ async def main() -> int:
         mp_context = multiprocessing.get_context('spawn')
         executor = ProcessPoolExecutor(
             max_workers=3,
-            initializer=init_logging,
             mp_context=mp_context,
         )
 
     async with await Manager.from_exchange_factory(
-        factory=HttpExchangeFactory(
-            EXCHANGE_ADDRESS,
-            auth_method='globus',
-        ),
+        factory=HttpExchangeFactory(),
         # Agents are run by the manager in the processes of this
         # process pool executor.
         executors=executor,
+        log_config=recommended_logging(),
     ) as manager:
         player_1 = await manager.launch(MyBattleshipPlayer)
         player_2 = await manager.launch(MyBattleshipPlayer)
@@ -128,6 +122,11 @@ async def main() -> int:
             else:
                 print('Unknown command')
             print('-----------------------------------------------------')
+
+        # We terminate agents in the correct order to avoid errors in the logs
+        await coordinator.shutdown()
+        await player_1.shutdown()
+        await player_2.shutdown()
 
     return 0
 

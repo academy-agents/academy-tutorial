@@ -6,9 +6,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 from academy.agent import action
 from academy.agent import Agent
-from academy.agent import loop
 from academy.exchange import LocalExchangeFactory
-from academy.logging import init_logging
+from academy.logging.recommended import recommended_logging
 from academy.manager import Manager
 
 logger = logging.getLogger(__name__)
@@ -24,7 +23,7 @@ class Coordinator(Agent):
 
     @action
     async def process(self, text: str) -> str:
-        # TODO: Invoke the agents given the text 
+        # TODO: Invoke the agents given the text
         return text
 
 
@@ -41,16 +40,15 @@ class Reverser(Agent):
 
 
 async def main() -> int:
-    init_logging(logging.INFO)
-
     async with await Manager.from_exchange_factory(
         factory=LocalExchangeFactory(),
         executors=ThreadPoolExecutor(),
+        log_config=recommended_logging(),
     ) as manager:
         lowerer = await manager.launch(Lowerer)
         reverser = await manager.launch(Reverser)
-        coordinator = ... # TODO: Launch the coordinator agent
-        
+        coordinator = ...  # TODO: Launch the coordinator agent
+
         text = 'DEADBEEF'
         expected = 'feebdaed'
 

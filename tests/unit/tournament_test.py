@@ -74,12 +74,12 @@ async def test_game():
 class SlowPlayer(MyBattleshipPlayer):
     @action
     async def new_game(self, ships, size=10) -> Board:
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.5)
         return await super().new_game(ships, size)
 
 
 @pytest.mark.asyncio
-async def test_test_player_slow():
+async def test_player_slow():
     tournament = TournamentAgent()
     slow = ProxyHandle(SlowPlayer())
     with pytest.raises(TimeoutError):
