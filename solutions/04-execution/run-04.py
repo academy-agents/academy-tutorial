@@ -21,16 +21,13 @@ class Coordinator(Agent):
     def __init__(
         self,
         lowerer: Handle[Lowerer],
-        reverser: Handle[Reverser],
     ) -> None:
         super().__init__()
         self.lowerer = lowerer
-        self.reverser = reverser
 
     @action
     async def process(self, text: str) -> str:
         text = await self.lowerer.lower(text)
-        text = await self.reverser.reverse(text)
         return text
 
 
@@ -40,14 +37,9 @@ class Lowerer(Agent):
         return text.lower()
 
 
-class Reverser(Agent):
-    @action
-    async def reverse(self, text: str) -> str:
-        return text[::-1]
-
-
 async def main() -> int:
     if 'ACADEMY_TUTORIAL_ENDPOINT' in os.environ:
+        # NOTE: The tutorial endpoint is limited to 2 agents per user
         executor = GCExecutor(os.environ['ACADEMY_TUTORIAL_ENDPOINT'])
     else:
         mp_context = multiprocessing.get_context('spawn')
@@ -66,14 +58,13 @@ async def main() -> int:
         # Launch each of the three agents types. The returned type is
         # a handle to that agent used to invoke actions.
         lowerer = await manager.launch(Lowerer)
-        reverser = await manager.launch(Reverser)
         coordinator = await manager.launch(
             Coordinator,
-            args=(lowerer, reverser),
+            args=(lowerer,),
         )
 
         text = 'DEADBEEF'
-        expected = 'feebdaed'
+        expected = 'deadbeef'
 
         logger.info(
             'Invoking process("%s") on %s',

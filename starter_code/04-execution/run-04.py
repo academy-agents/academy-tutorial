@@ -4,15 +4,12 @@ import asyncio
 import logging
 import multiprocessing
 import os
-from concurrent.futures import ProcessPoolExecutor
 
 from academy.agent import action
 from academy.agent import Agent
-from academy.exchange.cloud.client import HttpExchangeFactory
 from academy.handle import Handle
 from academy.logging.recommended import recommended_logging
 from academy.manager import Manager
-from globus_compute_sdk import Executor as GCExecutor
 
 EXCHANGE_ADDRESS = 'https://exchange.academy-agents.org'
 logger = logging.getLogger(__name__)
@@ -22,16 +19,13 @@ class Coordinator(Agent):
     def __init__(
         self,
         lowerer: Handle[Lowerer],
-        reverser: Handle[Reverser],
     ) -> None:
         super().__init__()
         self.lowerer = lowerer
-        self.reverser = reverser
 
     @action
     async def process(self, text: str) -> str:
         text = await self.lowerer.lower(text)
-        text = await self.reverser.reverse(text)
         return text
 
 
@@ -41,37 +35,35 @@ class Lowerer(Agent):
         return text.lower()
 
 
-class Reverser(Agent):
-    @action
-    async def reverse(self, text: str) -> str:
-        return text[::-1]
-
-
 async def main() -> int:
     if 'ACADEMY_TUTORIAL_ENDPOINT' in os.environ:
+        # NOTE: The tutorial endpoint is limited to 2 agents per user
         endpoint = os.environ['ACADEMY_TUTORIAL_ENDPOINT']
-        executor # TODO: create a GCExecutor with this endpoint as its argument
+        executor  # TODO: create a GCExecutor with this endpoint as its argument
     else:
         mp_context = multiprocessing.get_context('spawn')
         executor_kwargs = dict(max_workers=3, mp_context=mp_context)
-        executor = # TODO: create a ProcessPoolExecutor with the above kwargs
+        executor = (
+            ...
+        )  # TODO: create a ProcessPoolExecutor with the above kwargs
 
-    async with await Manager.from_exchange_factory(
-        factory=# TODO: create an HTTPSExchangeFactory associated with EXCHANGE_ADDRESS and with auth_method='globus'
-        executors=# TODO: pass the executor created above
-        log_config=recommended_logging(),
-    ) as manager:
+    async with (
+        await Manager.from_exchange_factory(
+            factory=...,  # TODO: create an HTTPSExchangeFactory associated with EXCHANGE_ADDRESS and with auth_method='globus'
+            executors=...,  # TODO: pass the executor created above
+            log_config=recommended_logging(),
+        ) as manager
+    ):
         # Launch each of the three agents types. The returned type is
         # a handle to that agent used to invoke actions.
         lowerer = await manager.launch(Lowerer)
-        reverser = await manager.launch(Reverser)
         coordinator = await manager.launch(
             Coordinator,
-            args=(lowerer, reverser),
+            args=(lowerer,),
         )
 
         text = 'DEADBEEF'
-        expected = 'feebdaed'
+        expected = 'deadbeef'
 
         logger.info(
             'Invoking process("%s") on %s',
