@@ -15,7 +15,7 @@ maintainers = [
 ]
 description = "Materials for academy tutorial"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.13,<3.14"
 license = {text = "MIT"}
 classifiers = [
     "License :: OSI Approved :: MIT License",
@@ -24,6 +24,7 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
+    "academy-dashboard>=0.1.0",
     "academy-py==0.5.0",
     "emoji",
     "globus-compute-sdk",
@@ -176,9 +177,3 @@ convention = "google"
 include = ["academy_tutorial"]
 exclude = ["tests*", "testing*"]
 namespaces = false
-
-[dependency-groups]
-llm = [
-    "langchain>=1.2.10",
-    "langchain-openai>=1.1.10",
-]
