@@ -10,11 +10,10 @@ from academy.agent import action
 from academy.agent import Agent
 from academy.exchange.cloud.client import HttpExchangeFactory
 from academy.handle import Handle
-from academy.logging import init_logging
+from academy.logging.recommended import recommended_logging
 from academy.manager import Manager
 from globus_compute_sdk import Executor as GCExecutor
 
-EXCHANGE_ADDRESS = 'https://exchange.academy-agents.org'
 logger = logging.getLogger(__name__)
 
 
@@ -48,26 +47,21 @@ class Reverser(Agent):
 
 
 async def main() -> int:
-    init_logging(logging.INFO)
-
     if 'ACADEMY_TUTORIAL_ENDPOINT' in os.environ:
         executor = GCExecutor(os.environ['ACADEMY_TUTORIAL_ENDPOINT'])
     else:
         mp_context = multiprocessing.get_context('spawn')
         executor = ProcessPoolExecutor(
             max_workers=3,
-            initializer=init_logging,
             mp_context=mp_context,
         )
 
     async with await Manager.from_exchange_factory(
-        factory=HttpExchangeFactory(
-            EXCHANGE_ADDRESS,
-            auth_method='globus',
-        ),
+        factory=HttpExchangeFactory(),
         # Agents are run by the manager in the processes of this
         # process pool executor.
         executors=executor,
+        log_config=recommended_logging(),
     ) as manager:
         # Launch each of the three agents types. The returned type is
         # a handle to that agent used to invoke actions.

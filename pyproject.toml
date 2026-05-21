@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "academy-tutorial"
-version = "0.1.0"
+version = "0.2.0"
 authors = [
     {name = "Alok Kamatar", email = "alokvk2@uchicago.edu"},
     {name = "Greg Pauloski"},
@@ -24,7 +24,7 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
-    "academy-py>=0.3.1",
+    "academy-py==0.5.0",
     "emoji",
     "globus-compute-sdk",
     "ipykernel>=7.2.0",
@@ -165,6 +165,7 @@ required-imports = ["from __future__ import annotations"]
 "*/*_test.py" = ["D10"]
 "solutions/*" = ["D"]
 "starter_code/*" = ["D"]
+"*.ipynb" = ["D"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
