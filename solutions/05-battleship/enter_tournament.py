@@ -17,7 +17,7 @@ from academy_tutorial.battleship import Board
 from academy_tutorial.battleship import Crd
 from academy_tutorial.player import BattleshipPlayer
 
-EXCHANGE_ADDRESS = 'https://exchange.academy-agents.org'
+
 logger = logging.getLogger(__name__)
 
 
@@ -76,10 +76,7 @@ async def main(name: str) -> int:
         uid=uuid.UUID(os.environ['ACADEMY_TUTORIAL_TOURNAMENT_AGENT']),
     )
 
-    factory = HttpExchangeFactory(
-        EXCHANGE_ADDRESS,
-        auth_method='globus',
-    )
+    factory = HttpExchangeFactory()
     async with await Manager.from_exchange_factory(
         factory=factory,
     ) as manager:
