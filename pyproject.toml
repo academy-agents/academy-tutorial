@@ -28,6 +28,8 @@ dependencies = [
     "emoji",
     "globus-compute-sdk",
     "ipykernel>=7.2.0",
+    "langchain>=1.3.0",
+    "langchain-openai>=1.2.1",
 ]
 
 [project.optional-dependencies]

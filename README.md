@@ -73,8 +73,8 @@ python run-03.py
 
 ---
 ## Module 04: Distributing Computation
-Academy integrates with a cloud hosted exchange and `globus compute` to build distributed agentic systems. 
-In the starter code for Module 04, fill in the constructor of an executor used to launch agents with the `GCExecutor` (Globus Compute Executor) or a `ProcessPoolExecutor` if you do not have a Globus Compute Endpoint available. Then complete the Manager context with the appropriate fields. For the `factory` use the `HttpExchangeFactory` pointed at our hosted exchange `https:exchange.academy-agents.org` with `auth_method='globus'`. For the `executors` field use the `GCExecutor` or `ProcessPoolExecutor` you created above.
+Academy integrates with a cloud hosted exchange and `globus compute` to build distributed agentic systems.
+In the starter code for Module 04, fill in the constructor of an executor used to launch agents with the `GCExecutor` (Globus Compute Executor) or a `ProcessPoolExecutor` if you do not have a Globus Compute Endpoint available. Then complete the Manager context with the appropriate fields. For the `factory` use the `HttpExchangeFactory`, which by defaults points at our hosted exchange `https:exchange.academy-agents.org` with `auth_method='globus'`. For the `executors` field use the `GCExecutor` or `ProcessPoolExecutor` you created above.
 This will enable you to launch the agents across distributed resources.
 
 Globus Compute is a FaaS platform that allows you to bring your own compute resource. In `run-compute-function.py` we show an example of running a remote function.
@@ -88,11 +88,30 @@ python run-04.py
 
 ---
 ## Module 05: Battleship
-Finally, we use `academy` to build a battleship game. Battleship consists of two agents --- a `coordinator` the manages the game state, and multiple instance of the `player` agent which implements a strategy.
+Next, we use `academy` to build a battleship game. Battleship consists of two agents --- a `coordinator` the manages the game state, and multiple instance of the `player` agent which implements a strategy.
 
 Implement the player strategy for guessing where opponent ships are and for placing ships on your board.
 
 To run the script:
 ```
 python run-05.py
+```
+
+
+## Module 06: LLM Agent
+`academy` combines with LLM agent harnesses to deploy intelligent agents in federated and parallel environments.
+In `run-06.py` we have used `langchain` to build a LLM agent to play `wordle` in a team.
+We want to start multiple agents in parallel and have them communicate with each other to solve the puzzle.
+
+To run this script you will need access to a LLM (i.e. any API key). Follow instructions from your LLM provider to set the correct environment variables and update the model used in the script to point to your hosted model.
+
+In `run-06.py` first fill in the `share_information` method to call actions on other agents.
+Then, add the `share_information` method to the `langchain.agent.create_agent` function as a tool for the LLM.
+In order to enable circular dependencies (each agent depends on each other), `academy` lets  separates the creation of mailboxes from the launching of agents.
+First, in the main method, use `manager.register_agent` to create the mailbox for each `WordleAgent`.
+Then, use the list of assembled handles and `manager.launch` to launch the agents.
+
+To run the script:
+```
+python run-06.py
 ```
