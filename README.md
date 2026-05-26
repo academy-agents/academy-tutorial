@@ -115,6 +115,9 @@ In order to enable circular dependencies (each agent depends on each other), `ac
 First, in the main method, use `manager.register_agent` to create the mailbox for each `WordleAgent`.
 Then, use the list of assembled handles and `manager.launch` to launch the agents.
 
+Here's a link with a key:
+https://docs.google.com/document/d/1jrhiS7zSre94VvJVeO6RjbEAuvMRTk3zg_ICdzk0Mg8/edit?tab=t.0
+
 To run the script:
 ```
 python run-06.py
