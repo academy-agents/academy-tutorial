@@ -36,6 +36,9 @@ from academy.manager import Manager
 from academy_dashboard import MonitoredAgent
 from academy_dashboard import UserAgent
 from academy_dashboard.user_agent.message import UserPrompt
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv('tpc.env', raise_error_if_not_found=True))
 
 
 logger = logging.getLogger(__name__)
