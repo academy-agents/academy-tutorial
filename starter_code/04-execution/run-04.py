@@ -10,6 +10,10 @@ from academy.agent import Agent
 from academy.handle import Handle
 from academy.logging.recommended import recommended_logging
 from academy.manager import Manager
+from dotenv import load_dotenv
+from dotenv import find_dotenv
+
+load_dotenv(find_dotenv('tpc.env', raise_error_if_not_found=True))
 
 EXCHANGE_ADDRESS = 'https://exchange.academy-agents.org'
 logger = logging.getLogger(__name__)

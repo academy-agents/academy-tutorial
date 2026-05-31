@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 
 from globus_compute_sdk import Executor as GCExecutor
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv('tpc.env', raise_error_if_not_found=True))
 
 
 def remote_function():
