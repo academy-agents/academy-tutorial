@@ -97,7 +97,7 @@ To run the script:
 python run-05.py
 ```
 
-Link to join IPDPS Battleship Group for the Tournament:
+Link to join ISC Battleship Group for the Tournament:
 
 [https://app.globus.org/groups/301fe241-5556-11f1-97c5-0eea096e6be1/about](https://app.globus.org/groups/301fe241-5556-11f1-97c5-0eea096e6be1/about)
 
