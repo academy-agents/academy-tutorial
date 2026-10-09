@@ -25,6 +25,7 @@ classifiers = [
 ]
 dependencies = [
     "academy-py==0.5.0",
+    "claude-agent-sdk>=0.2.165",
     "emoji",
     "globus-compute-sdk",
     "ipykernel>=7.2.0",
