@@ -38,7 +38,7 @@ class PlayerInfo:
 class TournamentAgent(Agent):
     """Play battleship agents against one another."""
 
-    timeout: ClassVar[float] = 0.25
+    timeout: ClassVar[float] = 1.0
     ships: ClassVar[list[int]] = [5, 5, 4, 3, 2]
 
     def __init__(self) -> None:

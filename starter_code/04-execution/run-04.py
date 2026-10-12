@@ -11,7 +11,6 @@ from academy.handle import Handle
 from academy.logging.recommended import recommended_logging
 from academy.manager import Manager
 
-EXCHANGE_ADDRESS = 'https://exchange.academy-agents.org'
 logger = logging.getLogger(__name__)
 
 
@@ -47,13 +46,11 @@ async def main() -> int:
             ...
         )  # TODO: create a ProcessPoolExecutor with the above kwargs
 
-    async with (
-        await Manager.from_exchange_factory(
-            factory=...,  # TODO: create an HTTPSExchangeFactory associated with EXCHANGE_ADDRESS and with auth_method='globus'
-            executors=...,  # TODO: pass the executor created above
-            log_config=recommended_logging(),
-        ) as manager
-    ):
+    async with await Manager.from_exchange_factory(
+        factory=...,  # TODO: create an HTTPSExchangeFactory
+        executors=...,  # TODO: pass the executor created above
+        log_config=recommended_logging(),
+    ) as manager:
         # Launch each of the three agents types. The returned type is
         # a handle to that agent used to invoke actions.
         lowerer = await manager.launch(Lowerer)
