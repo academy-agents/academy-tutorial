@@ -74,7 +74,7 @@ async def test_game():
 class SlowPlayer(MyBattleshipPlayer):
     @action
     async def new_game(self, ships, size=10) -> Board:
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(2.0)
         return await super().new_game(ships, size)
 
 

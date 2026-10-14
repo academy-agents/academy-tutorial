@@ -74,7 +74,7 @@ python run-03.py
 ---
 ## Module 04: Distributing Computation
 Academy integrates with a cloud hosted exchange and `globus compute` to build distributed agentic systems.
-In the starter code for Module 04, fill in the constructor of an executor used to launch agents with the `GCExecutor` (Globus Compute Executor) or a `ProcessPoolExecutor` if you do not have a Globus Compute Endpoint available. Then complete the Manager context with the appropriate fields. For the `factory` use the `HttpExchangeFactory`, which by defaults points at our hosted exchange `https:exchange.academy-agents.org` with `auth_method='globus'`. For the `executors` field use the `GCExecutor` or `ProcessPoolExecutor` you created above.
+In the starter code for Module 04, fill in the constructor of an executor used to launch agents with the `GCExecutor` (Globus Compute Executor) or a `ProcessPoolExecutor` if you do not have a Globus Compute Endpoint available. Then complete the Manager context with the appropriate fields. For the `factory` use the `HttpExchangeFactory`. For the `executors` field use the `GCExecutor` or `ProcessPoolExecutor` you created above.
 This will enable you to launch the agents across distributed resources.
 
 Globus Compute is a FaaS platform that allows you to bring your own compute resource. In `run-compute-function.py` we show an example of running a remote function.
