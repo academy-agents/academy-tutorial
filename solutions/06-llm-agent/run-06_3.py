@@ -12,8 +12,8 @@ from academy.handle import Handle
 from academy.logging.recommended import recommended_logging
 from academy.manager import Manager
 from claude_agent_sdk import ClaudeAgentOptions
+from claude_agent_sdk import ClaudeSDKClient
 from claude_agent_sdk import create_sdk_mcp_server
-from claude_agent_sdk import query
 from claude_agent_sdk import ResultMessage
 from claude_agent_sdk import tool
 
@@ -54,10 +54,11 @@ def options(
     )
 
 
-async def run(prompt: str, options: ClaudeAgentOptions) -> str:
-    """Run a Claude Agent SDK query and return the final result."""
+async def run(client: ClaudeSDKClient, prompt: str) -> str:
+    """Send a prompt on a persistent session and return the final result."""
     result = ''
-    async for message in query(prompt=prompt, options=options):
+    await client.query(prompt)
+    async for message in client.receive_response():
         if isinstance(message, ResultMessage):
             result = message.result or ''
     return result
@@ -85,30 +86,38 @@ class StrategyAgent(Agent):
             logger.info(f'{self.agent_id} simulating {len(pairs)} guesses')
             return text([score_guess(g, t) for g, t in pairs])
 
-        self.options = options(
-            'simulator',
-            [simulate],
-            system_prompt=(
-                RULES + 'You evaluate Wordle strategies offline. Design your '
-                'own test: choose 3 to 5 varied target words and play the '
-                'strategy against all of them at once, passing the next '
-                'guess for every unsolved game in a single '
-                '`simulate_feedback` call. When choosing guesses, only use '
-                "the feedback, not the target's identity, so the test is "
-                'fair.'
+        # Connect once so the sub-agent reuses the same session
+        self.client = ClaudeSDKClient(
+            options=options(
+                'simulator',
+                [simulate],
+                system_prompt=(
+                    RULES + 'You evaluate Wordle strategies offline. Design '
+                    'your own test: choose 3 to 5 varied target words and '
+                    'play the strategy against all of them at once, passing '
+                    'the next guess for every unsolved game in a single '
+                    '`simulate_feedback` call. When choosing guesses, only '
+                    "use the feedback, not the target's identity, so the "
+                    'test is fair.'
+                ),
+                max_turns=10,
             ),
-            max_turns=10,
         )
+        await self.client.connect()
+
+    async def agent_on_shutdown(self):
+        """Close the Claude session."""
+        await self.client.disconnect()
 
     @action
     async def evaluate_strategy(self, strategy: str) -> str:
         """Evaluate a wordle strategy and report how well it performs."""
         logger.info(f'{self.agent_id} evaluating: {strategy}')
         return await run(
+            self.client,
             f'Evaluate this strategy:\n{strategy}\n\n'
             'Report the test words you used, the guesses taken for each, '
             'the average number of guesses, and any weaknesses you found.',
-            self.options,
         )
 
 
@@ -116,8 +125,8 @@ class CoordinatorAgent(Agent):
     """A LLM powered agent searching for the best strategy to play wordle.
 
     The coordinator proposes strategies and delegates each one to a
-    sub-agent for evaluation. Once it picks the best strategy, it plays the
-    true game, where each guess is a costly evaluation.
+    sub-agent for evaluation. Once it picks the best strategy, it can use
+    it to play true games, where each guess is a costly evaluation.
 
     Args:
         workers: Handles to the sub-agents evaluating strategies.
@@ -125,6 +134,17 @@ class CoordinatorAgent(Agent):
 
     def __init__(self, workers: list[Handle[StrategyAgent]]) -> None:
         self.workers = workers
+        self.game: WordleGame | None = None
+        self.guesses: list[str] = []
+
+    def _make_guess_internal(self, guess: str) -> list[str] | str:
+        """Internal guess mechanism.
+
+        We need an internal guess method so that we can swap the game
+        even after the Claude session has been created.
+        """
+        self.guesses.append(guess.lower())
+        return self.game.make_guess(guess)
 
     async def evaluate_strategies(self, strategies: list[str]) -> list[str]:
         """Evaluate wordle strategies in parallel, one per sub-agent.
@@ -154,59 +174,81 @@ class CoordinatorAgent(Agent):
             reports = await self.evaluate_strategies(args['strategies'])
             return text(json.dumps(dict(zip(args['strategies'], reports))))
 
-        self.search_options = options(
-            'coordinator',
-            [evaluate],
-            system_prompt=(
-                RULES + 'Your goal is to find the best general strategy for '
-                'playing Wordle, one that solves puzzles in the fewest '
-                f'guesses. You have {len(self.workers)} sub-agents. Use '
-                '`evaluate_strategies` to have each sub-agent test one of '
-                'your proposed strategies. You may refine and evaluate '
-                'once more based on their reports, at most 2 rounds total.'
-            ),
-            max_turns=4,
-        )
-
-    @action
-    async def play_wordle(self, game: WordleGame) -> dict[str, Any]:
-        """Find the best strategy, then use it to play the true game."""
-        strategy = await run(
-            f'Propose {len(self.workers)} distinct wordle strategies and '
-            'evaluate them, then reply with '
-            'only the best strategy, written as instructions for a player.',
-            self.search_options,
-        )
-        logger.info(f'Best strategy:\n{strategy}')
-
-        # Each guess in the true game is costly, so only play it once
-        guesses: list[str] = []
-
-        @tool('wordle_feedback', game.make_guess.__doc__, {'guess': str})
+        @tool('wordle_feedback', WordleGame.make_guess.__doc__, {'guess': str})
         async def guess(args: dict[str, Any]) -> dict[str, Any]:
-            guesses.append(args['guess'].lower())
-            return text(game.make_guess(args['guess']))
+            return text(self._make_guess_internal(args['guess']))
 
-        answer = await run(
-            'Play wordle by guessing words using `wordle_feedback`. '
-            'Return the answer to the wordle puzzle.',
-            options(
+        # Connect once so the coordinator keeps the same sessions across
+        # games, and can build on strategies it evaluated previously
+        self.search_client = ClaudeSDKClient(
+            options=options(
+                'coordinator',
+                [evaluate],
+                system_prompt=(
+                    RULES + 'Your goal is to find the best general strategy '
+                    'for playing Wordle, one that solves puzzles in the '
+                    f'fewest guesses. You have {len(self.workers)} '
+                    'sub-agents. Use `evaluate_strategies` to have each '
+                    'sub-agent test one of your proposed strategies. You may '
+                    'refine and evaluate once more based on their reports, '
+                    'at most 2 rounds total.'
+                ),
+                max_turns=4,
+            ),
+        )
+        self.play_client = ClaudeSDKClient(
+            options=options(
                 'wordle',
                 [guess],
                 system_prompt=(
                     RULES + 'The `wordle_feedback` tool has the hidden word. '
                     'Each guess is costly, so solve it in as few guesses as '
-                    f'possible. Play following this strategy:\n{strategy}'
+                    'possible, following the strategy you are given.'
                 ),
                 max_turns=12,
             ),
         )
-        return {'strategy': strategy, 'guesses': guesses, 'answer': answer}
+        await self.search_client.connect()
+        await self.play_client.connect()
+
+    async def agent_on_shutdown(self):
+        """Close the Claude sessions."""
+        await self.search_client.disconnect()
+        await self.play_client.disconnect()
+
+    @action
+    async def find_strategy(self) -> str:
+        """Search for the best strategy to play wordle."""
+        strategy = await run(
+            self.search_client,
+            f'Propose {len(self.workers)} distinct wordle strategies and '
+            'evaluate them, then reply with '
+            'only the best strategy, written as instructions for a player.',
+        )
+        logger.info(f'Best strategy:\n{strategy}')
+        return strategy
+
+    @action
+    async def play_wordle(
+        self,
+        game: WordleGame,
+        strategy: str,
+    ) -> dict[str, Any]:
+        """Play the true game of wordle using the given strategy."""
+        # Each guess in the true game is costly, so only play it once
+        self.game = game
+        self.guesses = []
+
+        answer = await run(
+            self.play_client,
+            'Play a new wordle by guessing words using `wordle_feedback`. '
+            f'Play following this strategy:\n{strategy}\n\n'
+            'Return the answer to the wordle puzzle.',
+        )
+        return {'guesses': list(self.guesses), 'answer': answer}
 
 
 async def main():
-    game = WordleGame()
-
     async with await Manager.from_exchange_factory(
         factory=LocalExchangeFactory(),
         log_config=recommended_logging(),
@@ -217,10 +259,17 @@ async def main():
         logger.info('Launching coordinator.')
         coordinator = await manager.launch(CoordinatorAgent, args=(workers,))
 
-        result = await coordinator.play_wordle(game)
-        logger.info(f'True game guesses: {result["guesses"]}')
-        logger.info(f'Coordinator returned {result["answer"]}')
-        logger.info(f'True target word: {game.target}')
+        logger.info('Searching for the best strategy.')
+        strategy = await coordinator.find_strategy()
+
+        for _ in range(2):  # Play 2 games with the same strategy
+            logger.info('Starting new game.')
+            game = WordleGame()
+
+            result = await coordinator.play_wordle(game, strategy)
+            logger.info(f'True game guesses: {result["guesses"]}')
+            logger.info(f'Coordinator returned {result["answer"]}')
+            logger.info(f'True target word: {game.target}')
 
 
 if __name__ == '__main__':

@@ -14,8 +14,8 @@ from academy.identifier import AgentId
 from academy.logging.recommended import recommended_logging
 from academy.manager import Manager
 from claude_agent_sdk import ClaudeAgentOptions
+from claude_agent_sdk import ClaudeSDKClient
 from claude_agent_sdk import create_sdk_mcp_server
-from claude_agent_sdk import query
 from claude_agent_sdk import ResultMessage
 from claude_agent_sdk import tool
 
@@ -44,6 +44,16 @@ class WordleAgent(Agent):
         self.model = 'claude-haiku-4-5'
         self.peers = peers
         self.insight_dict: dict[AgentId[Any], str] = {}
+        self.game: WordleGame | None = None
+        self.client: ClaudeSDKClient | None = None
+
+    def _make_guess_internal(self, guess: str) -> list[str] | str:
+        """Internal guess mechanism.
+
+        We need an internal guess method so that we can swap the game
+        even after the Claude session has been created.
+        """
+        return self.game.make_guess(guess)
 
     async def read_blackboard(self) -> str:
         """Read the blackboard of insights shared by peer agents.
@@ -95,10 +105,6 @@ class WordleAgent(Agent):
         """Initialize the academy agent state."""
         self.peers = [p for p in self.peers if p.agent_id != self.agent_id]
 
-    @action
-    async def play_wordle(self, game: WordleGame) -> str:
-        """Play a game of wordle, collaborating through the blackboard."""
-
         @tool('read_blackboard', self.read_blackboard.__doc__, {})
         async def read_blackboard(args: dict[str, Any]) -> dict[str, Any]:
             text = await self.read_blackboard()
@@ -110,9 +116,9 @@ class WordleAgent(Agent):
             text = await self.read_blackboard()
             return {'content': [{'type': 'text', 'text': text}]}
 
-        @tool('wordle_feedback', game.make_guess.__doc__, {'guess': str})
+        @tool('wordle_feedback', WordleGame.make_guess.__doc__, {'guess': str})
         async def guess(args: dict[str, Any]) -> dict[str, Any]:
-            text = str(game.make_guess(args['guess']))
+            text = str(self._make_guess_internal(args['guess']))
             return {'content': [{'type': 'text', 'text': text}]}
 
         options = ClaudeAgentOptions(
@@ -151,23 +157,36 @@ class WordleAgent(Agent):
             max_turns=16,
         )
 
+        # Connect once so the agent reuses the same session across games
+        self.client = ClaudeSDKClient(options=options)
+        await self.client.connect()
+
+    async def agent_on_shutdown(self):
+        if self.client is not None:
+            await self.client.disconnect()
+
+    @action
+    async def play_wordle(self, game: WordleGame) -> str:
+        """Play a game of wordle, collaborating through the blackboard."""
+        self.game = game
+        # Insights from the previous game no longer apply
+        self.insight_dict.clear()
+
+        prompt = (
+            'Play a new wordle by collaborating with other agents '
+            'and guessing words using `wordle_feedback`. '
+            'Return the answer to the wordle puzzle.'
+        )
+
         result = ''
-        async for message in query(
-            prompt=(
-                'Play wordle by collaborating with other agents '
-                'and guessing words using `wordle_feedback`. '
-                'Return the answer to the wordle puzzle.'
-            ),
-            options=options,
-        ):
+        await self.client.query(prompt)
+        async for message in self.client.receive_response():
             if isinstance(message, ResultMessage):
                 result = message.result or ''
         return result
 
 
 async def main():
-    game = WordleGame()
-
     async with await Manager.from_exchange_factory(
         factory=LocalExchangeFactory(),
         log_config=recommended_logging(),
@@ -196,16 +215,20 @@ async def main():
                 ),
             )
 
-        logger.info('Starting agent actions.')
-        results = await asyncio.gather(
-            *(hdl.play_wordle(game) for hdl in hdls),
-        )
-        for hdl, result in zip(hdls, results, strict=True):
-            logger.info(
-                f'{hdl.agent_id} returned {result}',
-            )
+        for _ in range(2):  # Play 2 games
+            logger.info('Starting new game.')
+            game = WordleGame()
 
-        logger.info(f'True target word: {game.target}')
+            logger.info('Starting agent actions.')
+            results = await asyncio.gather(
+                *(hdl.play_wordle(game) for hdl in hdls),
+            )
+            for hdl, result in zip(hdls, results, strict=True):
+                logger.info(
+                    f'{hdl.agent_id} returned {result}',
+                )
+
+            logger.info(f'True target word: {game.target}')
 
 
 if __name__ == '__main__':
