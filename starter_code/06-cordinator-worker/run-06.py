@@ -155,8 +155,12 @@ class CoordinatorAgent(Agent):
         Args:
             strategies: Descriptions of the strategies to evaluate.
         """
-        # TODO: Use the workers to evaluate each of the strategies in the list
-
+        return await asyncio.gather(
+            *(
+                worker.evaluate_strategy(strategy)
+                for worker, strategy in zip(self.workers, strategies)
+            ),
+        )
 
     async def agent_on_startup(self):
         """Initialize the academy agent state."""
@@ -215,8 +219,14 @@ class CoordinatorAgent(Agent):
     @action
     async def find_strategy(self) -> str:
         """Search for the best strategy to play wordle."""
-        # TODO: Ask the search client to propose strategies to evaluate
-        # And ask it to return the best strategy as instructions for a player
+        strategy = await run(
+            self.search_client,
+            f'Propose {len(self.workers)} distinct wordle strategies and '
+            'evaluate them, then reply with '
+            'only the best strategy, written as instructions for a player.',
+        )
+        logger.info(f'Best strategy:\n{strategy}')
+        return strategy
 
     @action
     async def play_wordle(

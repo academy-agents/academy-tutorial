@@ -6,27 +6,29 @@ import contextlib
 import inspect
 import io
 import logging
+import multiprocessing
+import os
+import time
 import traceback
+from concurrent.futures import ProcessPoolExecutor
 from typing import Any
 
 import ase
-import ase.build  # noqa: F401  (makes ase.build available to the LLM)
-from huggingface_hub import snapshot_download
-from mlip.inference import run_batched_inference
-from mlip.models import Visnet
-from mlip.models.model_io import load_model_from_zip
-
-from academy.agent import action
-from academy.agent import Agent
-from academy.exchange import LocalExchangeFactory
-from academy.handle import Handle
-from academy.logging.recommended import recommended_logging
-from academy.manager import Manager
+import ase.build  # noqa: F401  (put build into the namespace for the LLM)
 from claude_agent_sdk import ClaudeAgentOptions
 from claude_agent_sdk import ClaudeSDKClient
 from claude_agent_sdk import ResultMessage
 from claude_agent_sdk import create_sdk_mcp_server
 from claude_agent_sdk import tool
+
+from academy.agent import action
+from academy.agent import Agent
+from academy.exchange import HttpExchangeFactory
+from academy.handle import Handle
+from academy.logging.recommended import recommended_logging
+from academy.manager import Manager
+from globus_compute_sdk import Executor as GCExecutor
+
 
 logger = logging.getLogger(__name__)
 
@@ -38,30 +40,31 @@ class MLIPAgent(Agent):
     plain Python numbers, so any agent (or script) can use it.
     """
 
-    async def agent_on_startup(self) -> None:
-        # Download and load the model off the event loop
-        await asyncio.to_thread(
-            snapshot_download,
-            repo_id='InstaDeepAI/MLIP-tutorials',
-            allow_patterns='simulation/*',
-            local_dir='.',
-        )
-        self.force_field = await asyncio.to_thread(
-            load_model_from_zip,
-            Visnet,
-            'simulation/example_model_v2.zip',
-        )
+    MOCK_ENERGIES = [-7662.041, -7660.843]
+
+    def __init__(self) -> None:
+        self.n_predicted = 0
 
     @action
     async def predict_energy(self, structures: list[ase.Atoms]) -> list[float]:
-        """Predict the energy (eV) of each structure."""
-        predictions = await asyncio.to_thread(
-            run_batched_inference,
-            structures,
-            self.force_field,
-        )
-        # Convert jax arrays to floats before sending them over the exchange
-        return [float(pred.energy) for pred in predictions]
+        """Predict the potential energy of each structure.
+
+        The model only supports structures containing H, C, and O atoms.
+
+        Args:
+            structures: Structures to evaluate, as `ase.Atoms` objects.
+
+        Returns:
+            The energy of each structure in eV, in the same order.
+        """
+        logger.info(f'Called mock predict energy on {len(structures)} structure(s).')
+        energies = []
+        for _ in structures:
+            energies.append(
+                self.MOCK_ENERGIES[self.n_predicted % len(self.MOCK_ENERGIES)],
+            )
+            self.n_predicted += 1
+        return energies
 
 
 async def run_python(code: str, namespace: dict[str, Any]) -> str:
@@ -71,6 +74,10 @@ async def run_python(code: str, namespace: dict[str, Any]) -> str:
     Exceptions are returned as a traceback so the LLM can fix its code.
     """
     output = io.StringIO()
+
+    logger.info(
+        f'Running code\n\n{code}'
+    )
     try:
         compiled = compile(
             code, '<llm>', 'exec', flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT,
@@ -85,11 +92,7 @@ async def run_python(code: str, namespace: dict[str, Any]) -> str:
 
 
 class MaterialsAgent(Agent):
-    """A LLM powered agent for materials design.
-
-    The LLM writes Python that runs inside this agent, so it can use the
-    agent's exchange client to discover the MLIPAgent and call it.
-    """
+    """A LLM powered agent for materials design."""
 
     def __init__(self) -> None:
         self.model = 'claude-haiku-4-5'
@@ -101,8 +104,8 @@ class MaterialsAgent(Agent):
     async def agent_on_startup(self) -> None:
         self.namespace.update({
             'agent': self,
+            'Agent': Agent,
             'Handle': Handle,
-            'MLIPAgent': MLIPAgent,
             'ase': ase,
         })
 
@@ -124,17 +127,24 @@ class MaterialsAgent(Agent):
             system_prompt=(
                 'You are an assistant to an expert materials scientist. '
                 'You can run Python with the `execute_python` tool. '
+                'You are running inside an Academy agent, and other agents '
+                'with useful capabilities are available on the exchange. '
                 'The following are already defined:\n'
-                '- `agent`: this agent. Find other agents with '
-                '`await agent.agent_exchange_client.discover(MLIPAgent)`, '
-                'which returns a tuple of agent IDs.\n'
-                '- `Handle`: wrap an agent ID with `Handle(agent_id)` to '
-                'call its actions.\n'
-                '- `MLIPAgent`: has the action '
-                '`await handle.predict_energy(structures: list[ase.Atoms]) '
-                '-> list[float]`, returning energies in eV.\n'
-                '- `ase`: the Atomic Simulation Environment, e.g. '
-                '`ase.build.bulk(...)`.\n'
+                '- `agent`: this agent.\n'
+                '- `Agent`: the base class of all agents.\n'
+                '- `Handle`: used to talk to another agent.\n'
+                '- `ase`: the Atomic Simulation Environment.\n'
+                '\n'
+                'Use the exchange to find agents and the actions they offer:\n'
+                '1. `await agent.agent_exchange_client.discover(Agent)` '
+                'returns a tuple of IDs of all running agents (including '
+                'your own, `agent.agent_id`).\n'
+                '2. `handle = Handle(agent_id)` creates a handle to an agent.\n'
+                '3. `await handle.agent_describe()` returns a description of '
+                'the agent, with `.description` and `.actions`, a dict '
+                'mapping action names to their type signature and docstring.\n'
+                '4. Call an action with `await handle.<action_name>(...)`.\n'
+                '\n'
                 'Energies are in eV and lengths in Angstrom.'
             ),
             mcp_servers={
@@ -166,21 +176,35 @@ class MaterialsAgent(Agent):
 
 
 async def main() -> None:
+
+    if 'ACADEMY_TUTORIAL_ENDPOINT' in os.environ:
+        # NOTE: The tutorial endpoint is limited to 2 agents per user
+        executor = GCExecutor(os.environ['ACADEMY_TUTORIAL_ENDPOINT'])
+    else:
+        mp_context = multiprocessing.get_context('spawn')
+        executor = ProcessPoolExecutor(
+            max_workers=3,
+            mp_context=mp_context,
+        )
+
     async with await Manager.from_exchange_factory(
-        factory=LocalExchangeFactory(),
+        factory=HttpExchangeFactory(),
         log_config=recommended_logging(),
+        executors=..., # TODO: Pass the excutor to the manager
     ) as manager:
         logger.info('Launching agents.')
 
-        # Note: we do NOT pass the MLIPAgent handle to the MaterialsAgent.
-        # The LLM finds it on its own by writing code that uses the exchange.
-        await manager.launch(MLIPAgent)
-        hdl = await manager.launch(MaterialsAgent)
+        mlip_agent = # TODO: Launch with the passed executor
+        
+        # Wait for the MLIP agent to launch 
+        await mlip_agent.ping()
+
+        hdl = # TODO: Launch the materials agent locally
 
         result = await hdl.query(
-            'Which is more stable for silicon: diamond or fcc? '
-            'Scan a few lattice constants for each and report the lowest '
-            'energy per atom you find.',
+            'First, compute the energy of ethanol. Then, in a separate '
+            'call, compute the energy of its isomer dimethyl ether '
+            '(both are C2H6O). Which one is more stable, and by how much?',
         )
         logger.info(f'Agent response: {result}')
 

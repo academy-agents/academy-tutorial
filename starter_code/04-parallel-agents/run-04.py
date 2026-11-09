@@ -81,7 +81,13 @@ class WordleAgent(Agent):
     @action
     async def play_wordle(self, game: WordleGame) -> str:
         """Play a game of wordle."""
-        # TODO: Set `self.game`, the use `self.client.query`
+        prompt = (
+            'Play a new wordle by guessing words using `wordle_feedback`. '
+            'Return the answer to the wordle puzzle.'
+        )
+
+        # TODO: Set the agent's game so it has the appropriate tool
+        # Then let the agent solved the puzzle.
 
 
 async def main():
@@ -90,18 +96,15 @@ async def main():
         log_config=recommended_logging(),
     ) as manager:
         logger.info('Launching agents.')
-        hdls = [await manager.launch(WordleAgent) for _ in range(2)]
+        # TODO: Launch the agents to solve wordle in parallel
 
         for _ in range(2):  # Play 2 games
             logger.info('Starting new game.')
             game = WordleGame()
 
             logger.info('Starting agent actions.')
-            results = await asyncio.gather(
-                *(hdl.play_wordle(game) for hdl in hdls),
-            )
-            for hdl, result in zip(hdls, results, strict=True):
-                logger.info(f'{hdl.agent_id} returned {result}')
+            # TODO: Launch the agents in parallel.
+            # Stop the search when one of the agents finds an naswer
 
             logger.info(f'True target word: {game.target}')
 

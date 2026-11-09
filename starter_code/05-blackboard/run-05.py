@@ -55,9 +55,6 @@ class WordleAgent(Agent):
         """
         return self.game.make_guess(guess)
 
-    # TODO: Implement a receive information function that can be called by other agents
-    # This function should add information to the insight dictionary
-
     async def read_blackboard(self) -> str:
         """Read the blackboard of insights shared by peer agents.
 
@@ -70,6 +67,21 @@ class WordleAgent(Agent):
         )
         return insights or 'The blackboard is empty.'
 
+    @action(context=True)
+    async def receive_information(
+        self,
+        info: str,
+        *,
+        context: ActionContext,
+    ) -> None:
+        """Receive information from other agents playing the same game.
+
+        Args:
+            info: Information received from other agent.
+
+        """
+        # TODO: Write an action that receives information from another agent
+        # and writes it into a dictionary
 
     async def write_blackboard(self, info: str) -> None:
         """Write information to the blackboard shared with other agents.
@@ -91,7 +103,16 @@ class WordleAgent(Agent):
         """Initialize the academy agent state."""
         self.peers = [p for p in self.peers if p.agent_id != self.agent_id]
 
-        # TODO: Implement write and read black board as tools that the model can use.
+        @tool('read_blackboard', self.read_blackboard.__doc__, {})
+        async def read_blackboard(args: dict[str, Any]) -> dict[str, Any]:
+            text = await self.read_blackboard()
+            return {'content': [{'type': 'text', 'text': text}]}
+
+        @tool('write_blackboard', self.write_blackboard.__doc__, {'info': str})
+        async def write_blackboard(args: dict[str, Any]) -> dict[str, Any]:
+            await self.write_blackboard(args['info'])
+            text = await self.read_blackboard()
+            return {'content': [{'type': 'text', 'text': text}]}
 
         @tool('wordle_feedback', WordleGame.make_guess.__doc__, {'guess': str})
         async def guess(args: dict[str, Any]) -> dict[str, Any]:
@@ -120,14 +141,15 @@ class WordleAgent(Agent):
             mcp_servers={
                 'wordle': create_sdk_mcp_server(
                     'wordle',
-                    tools=[guess], # TODO: Add the tools to this list
+                    tools=[read_blackboard, write_blackboard, guess],
                 ),
             },
             # Only expose our tools, not built-in or user-configured ones
             tools=[],
             strict_mcp_config=True,
             allowed_tools=[
-                # TODO: Allow the new tools to be used
+                'mcp__wordle__read_blackboard',
+                'mcp__wordle__write_blackboard',
                 'mcp__wordle__wordle_feedback',
             ],
             max_turns=16,
