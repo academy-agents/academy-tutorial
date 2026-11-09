@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import asyncio
 import logging
 from typing import Any
@@ -23,6 +24,8 @@ from academy_tutorial.wordle import WordleGame
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_MODEL = 'claude-haiku-4-5'
+
 
 class WordleAgent(Agent):
     """A LLM powered agent playing wordle.
@@ -35,13 +38,15 @@ class WordleAgent(Agent):
 
     Args:
         peers: A list of other agent handles.
+        model: Model used for LLM inference.
     """
 
     def __init__(
         self,
         peers: list[Handle[WordleAgent]],
+        model: str = DEFAULT_MODEL,
     ) -> None:
-        self.model = 'claude-haiku-4-5'
+        self.model = model
         self.peers = peers
         self.insight_dict: dict[AgentId[Any], str] = {}
         self.game: WordleGame | None = None
@@ -184,7 +189,7 @@ class WordleAgent(Agent):
         return result
 
 
-async def main():
+async def main(model: str = DEFAULT_MODEL):
     async with await Manager.from_exchange_factory(
         factory=LocalExchangeFactory(),
         log_config=recommended_logging(),
@@ -209,6 +214,7 @@ async def main():
                     # The peer handles are used to create the
                     # communication graph
                     args=(peers,),
+                    kwargs={'model': model},
                     registration=wordle_agent_reg,
                 ),
             )
@@ -230,4 +236,11 @@ async def main():
 
 
 if __name__ == '__main__':
-    raise SystemExit(asyncio.run(main()))
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--model',
+        default=DEFAULT_MODEL,
+        help=f'Model used for LLM inference (default: {DEFAULT_MODEL})',
+    )
+    args = parser.parse_args()
+    raise SystemExit(asyncio.run(main(args.model)))

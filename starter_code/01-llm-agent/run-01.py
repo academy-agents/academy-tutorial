@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import asyncio
 import logging
 
@@ -14,6 +15,8 @@ from claude_agent_sdk import ResultMessage
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_MODEL = 'claude-haiku-4-5'
+
 
 class HelloWorldAgent(Agent):
     """A LLM powered agent playing wordle.
@@ -23,8 +26,8 @@ class HelloWorldAgent(Agent):
     other agents.
     """
 
-    def __init__(self) -> None:
-        self.model = 'claude-haiku-4-5'
+    def __init__(self, model: str = DEFAULT_MODEL) -> None:
+        self.model = model
         self.client: ClaudeSDKClient | None = None
 
     async def agent_on_startup(self):
@@ -54,14 +57,14 @@ class HelloWorldAgent(Agent):
     # Use `self.client.receive_response()` for get the result messages
     # Check if the message is a `ResultMessage` and return message.result
 
-async def main():
+async def main(model: str = DEFAULT_MODEL):
     async with await Manager.from_exchange_factory(
         factory=..., # TODO: Use the LocalExchangeFactory
         log_config=recommended_logging(),
     ) as manager:
         logger.info('Launching agents.')
 
-        # TODO: Launch the Agent
+        # TODO: Launch the Agent (pass kwargs={'model': model})
         hdl = ...
 
         # Message the agent
@@ -73,4 +76,11 @@ async def main():
         logger.info(f'Agent response: {result}')
 
 if __name__ == '__main__':
-    raise SystemExit(asyncio.run(main()))
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--model',
+        default=DEFAULT_MODEL,
+        help=f'Model used for LLM inference (default: {DEFAULT_MODEL})',
+    )
+    args = parser.parse_args()
+    raise SystemExit(asyncio.run(main(args.model)))

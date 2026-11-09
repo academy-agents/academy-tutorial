@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import asyncio
 import logging
 from typing import Any
@@ -19,6 +20,8 @@ from academy_tutorial.wordle import WordleGame
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_MODEL = 'claude-haiku-4-5'
+
 
 class WordleAgent(Agent):
     """A LLM powered agent playing wordle.
@@ -28,8 +31,8 @@ class WordleAgent(Agent):
     other agents.
     """
 
-    def __init__(self) -> None:
-        self.model = 'claude-haiku-4-5'
+    def __init__(self, model: str = DEFAULT_MODEL) -> None:
+        self.model = model
         self.game: WordleGame | None = None
         self.client: ClaudeSDKClient | None = None
 
@@ -90,13 +93,14 @@ class WordleAgent(Agent):
         # Then let the agent solved the puzzle.
 
 
-async def main():
+async def main(model: str = DEFAULT_MODEL):
     async with await Manager.from_exchange_factory(
         factory=LocalExchangeFactory(),
         log_config=recommended_logging(),
     ) as manager:
         logger.info('Launching agents.')
         # TODO: Launch the agents to solve wordle in parallel
+        # (pass kwargs={'model': model})
 
         for _ in range(2):  # Play 2 games
             logger.info('Starting new game.')
@@ -110,4 +114,11 @@ async def main():
 
 
 if __name__ == '__main__':
-    raise SystemExit(asyncio.run(main()))
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--model',
+        default=DEFAULT_MODEL,
+        help=f'Model used for LLM inference (default: {DEFAULT_MODEL})',
+    )
+    args = parser.parse_args()
+    raise SystemExit(asyncio.run(main(args.model)))

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import ast
 import asyncio
 import contextlib
@@ -31,6 +32,8 @@ from academy.logging.recommended import recommended_logging
 from academy.manager import Manager
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_MODEL = 'claude-haiku-4-5'
 
 
 class MLIPAgent(Agent):
@@ -107,8 +110,8 @@ class MaterialsAgent(Agent):
     agent's exchange client to discover the MLIPAgent and call it.
     """
 
-    def __init__(self) -> None:
-        self.model = 'claude-haiku-4-5'
+    def __init__(self, model: str = DEFAULT_MODEL) -> None:
+        self.model = model
         self.client: ClaudeSDKClient | None = None
         # Variables the LLM's code can see. It persists between tool calls,
         # so a handle or structure created in one call can be reused later.
@@ -188,7 +191,7 @@ class MaterialsAgent(Agent):
         return result
 
 
-async def main() -> None:
+async def main(model: str = DEFAULT_MODEL) -> None:
     async with await Manager.from_exchange_factory(
         factory=LocalExchangeFactory(),
         log_config=recommended_logging(),
@@ -202,7 +205,7 @@ async def main() -> None:
         # Wait for the MLIP agent to launch 
         await mlip_agent.ping()
 
-        hdl = await manager.launch(MaterialsAgent)
+        hdl = await manager.launch(MaterialsAgent, kwargs={'model': model})
 
         result = await hdl.query(
             'First, compute the energy of ethanol. Then, in a separate '
@@ -213,4 +216,11 @@ async def main() -> None:
 
 
 if __name__ == '__main__':
-    raise SystemExit(asyncio.run(main()))
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--model',
+        default=DEFAULT_MODEL,
+        help=f'Model used for LLM inference (default: {DEFAULT_MODEL})',
+    )
+    args = parser.parse_args()
+    raise SystemExit(asyncio.run(main(args.model)))

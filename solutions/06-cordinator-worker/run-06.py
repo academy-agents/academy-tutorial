@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import asyncio
 import json
 import logging
@@ -22,7 +23,7 @@ from academy_tutorial.wordle import WordleGame
 
 logger = logging.getLogger(__name__)
 
-MODEL = 'claude-haiku-4-5'
+DEFAULT_MODEL = 'claude-haiku-4-5'
 
 RULES = (
     'Wordle is a word-guessing game where the target is a hidden 5-letter '
@@ -38,13 +39,14 @@ def text(content: Any) -> dict[str, Any]:
 
 
 def options(
+    model: str,
     server: str,
     tools: list[Any],
     **kwargs: Any,
 ) -> ClaudeAgentOptions:
     """Build options exposing only the given in-process tools."""
     return ClaudeAgentOptions(
-        model=MODEL,
+        model=model,
         mcp_servers={server: create_sdk_mcp_server(server, tools=tools)},
         # Only expose our tools, not built-in or user-configured ones
         tools=[],
@@ -69,7 +71,13 @@ class StrategyAgent(Agent):
 
     The sub-agent designs its own test of the strategy using a cheap
     simulator, and never touches the costly true game.
+
+    Args:
+        model: Model used for LLM inference.
     """
+
+    def __init__(self, model: str = DEFAULT_MODEL) -> None:
+        self.model = model
 
     async def agent_on_startup(self):
         """Initialize the academy agent state."""
@@ -89,6 +97,7 @@ class StrategyAgent(Agent):
         # Connect once so the sub-agent reuses the same session
         self.client = ClaudeSDKClient(
             options=options(
+                self.model,
                 'simulator',
                 [simulate],
                 system_prompt=(
@@ -130,10 +139,16 @@ class CoordinatorAgent(Agent):
 
     Args:
         workers: Handles to the sub-agents evaluating strategies.
+        model: Model used for LLM inference.
     """
 
-    def __init__(self, workers: list[Handle[StrategyAgent]]) -> None:
+    def __init__(
+        self,
+        workers: list[Handle[StrategyAgent]],
+        model: str = DEFAULT_MODEL,
+    ) -> None:
         self.workers = workers
+        self.model = model
         self.game: WordleGame | None = None
         self.guesses: list[str] = []
 
@@ -182,6 +197,7 @@ class CoordinatorAgent(Agent):
         # games, and can build on strategies it evaluated previously
         self.search_client = ClaudeSDKClient(
             options=options(
+                self.model,
                 'coordinator',
                 [evaluate],
                 system_prompt=(
@@ -198,6 +214,7 @@ class CoordinatorAgent(Agent):
         )
         self.play_client = ClaudeSDKClient(
             options=options(
+                self.model,
                 'wordle',
                 [guess],
                 system_prompt=(
@@ -248,16 +265,23 @@ class CoordinatorAgent(Agent):
         return {'guesses': list(self.guesses), 'answer': answer}
 
 
-async def main():
+async def main(model: str = DEFAULT_MODEL):
     async with await Manager.from_exchange_factory(
         factory=LocalExchangeFactory(),
         log_config=recommended_logging(),
     ) as manager:
         logger.info('Launching sub-agents.')
-        workers = [await manager.launch(StrategyAgent) for _ in range(3)]
+        workers = [
+            await manager.launch(StrategyAgent, kwargs={'model': model})
+            for _ in range(3)
+        ]
 
         logger.info('Launching coordinator.')
-        coordinator = await manager.launch(CoordinatorAgent, args=(workers,))
+        coordinator = await manager.launch(
+            CoordinatorAgent,
+            args=(workers,),
+            kwargs={'model': model},
+        )
 
         logger.info('Searching for the best strategy.')
         strategy = await coordinator.find_strategy()
@@ -273,4 +297,11 @@ async def main():
 
 
 if __name__ == '__main__':
-    raise SystemExit(asyncio.run(main()))
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--model',
+        default=DEFAULT_MODEL,
+        help=f'Model used for LLM inference (default: {DEFAULT_MODEL})',
+    )
+    args = parser.parse_args()
+    raise SystemExit(asyncio.run(main(args.model)))

@@ -88,42 +88,34 @@ This will enable you to launch the agents across distributed resources.
 Globus Compute is a FaaS platform that allows you to bring your own compute resource. In `run-compute-function.py` we show an example of running a remote function. To run the test function, set the environment variable, then run:
 ```
 export ACADEMY_TUTORIAL_ENDPOINT=<ENDPOINT_ID>
-uv run python run-03.py
+uv run python run-compute-function.py
 ```
 
 The script also uses a cloud hosted exchange. The exchange is authenticated with [globus auth](https://www.globus.org/platform/services/auth), and federated identification provider. When you run the script you will be asked to give permissions for the `academy` client to use the exchange, and authenticate your token. After you provide the permissions, a token will be created that the `academy` client uses to communicate with the exchange.
 
 To run the script:
 ```
-python run-03.py
+uv run python run-03.py
 ```
 
 ---
 ## Module 04: Parallel Agents
-Next, we use `academy` to build a battleship game. Battleship consists of two agents --- a `coordinator` the manages the game state, and multiple instance of the `player` agent which implements a strategy.
-
-Implement the player strategy for guessing where opponent ships are and for placing ships on your board.
 
 To run the script:
 ```
-python run-05.py
+uv run python run-04.py
 ```
 
 
-## Module 05: 
-`academy` combines with LLM agent harnesses to deploy intelligent agents in federated and parallel environments.
-In `run-06.py` we have used `langchain` to build a LLM agent to play `wordle` in a team.
-We want to start multiple agents in parallel and have them communicate with each other to solve the puzzle.
-
-To run this script you will need access to a LLM (i.e. any API key). Follow instructions from your LLM provider to set the correct environment variables and update the model used in the script to point to your hosted model.
-
-In `run-06.py` first fill in the `share_information` method to call actions on other agents.
-Then, add the `share_information` method to the `langchain.agent.create_agent` function as a tool for the LLM.
-In order to enable circular dependencies (each agent depends on each other), `academy` lets  separates the creation of mailboxes from the launching of agents.
-First, in the main method, use `manager.register_agent` to create the mailbox for each `WordleAgent`.
-Then, use the list of assembled handles and `manager.launch` to launch the agents.
+## Module 05: Blackboard Communication
 
 To run the script:
 ```
-python run-06.py
+uv run python run-06.py
+```
+
+## Module 06: Sub-Agents
+To run the script:
+```
+uv run python run-06.py
 ```
