@@ -236,14 +236,12 @@ class CoordinatorAgent(Agent):
     @action
     async def find_strategy(self) -> str:
         """Search for the best strategy to play wordle."""
-        strategy = await run(
-            self.search_client,
+        prompt = (
             f'Propose {len(self.workers)} distinct wordle strategies and '
             'evaluate them, then reply with '
-            'only the best strategy, written as instructions for a player.',
+            'only the best strategy, written as instructions for a player.'
         )
-        logger.info(f'Best strategy:\n{strategy}')
-        return strategy
+        # TODO: Search for the best strategy using the workers
 
     @action
     async def play_wordle(
@@ -277,14 +275,10 @@ async def main(model: str = DEFAULT_MODEL):
         ]
 
         logger.info('Launching coordinator.')
-        coordinator = await manager.launch(
-            CoordinatorAgent,
-            args=(workers,),
-            kwargs={'model': model},
-        )
+        # TODO: Launch the coordinator agent with all of the worker agents.
 
         logger.info('Searching for the best strategy.')
-        strategy = await coordinator.find_strategy()
+        # TODO: Use the coordinator to search for the best wordle strategy
 
         for _ in range(2):  # Play 2 games with the same strategy
             logger.info('Starting new game.')

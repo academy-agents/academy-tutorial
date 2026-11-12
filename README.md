@@ -17,7 +17,7 @@ uv sync
 ```
 This will set up a local environment to complete the tutorial.
 
-### Set-up Infernce Provider
+### Set-up Inference Provider
 The tutorial is written using ClaudeSDKClient to perform LLM inference.
 If you are not authenticated with anthropic, or would like to use a different inference provider, use environment varaibles to point to any Anthropic API compatible endpoint.
 ```
@@ -100,6 +100,19 @@ uv run python run-03.py
 
 ---
 ## Module 04: Parallel Agents
+One class of scientific areas ripe for agents are (1) problems that can be formulated as a search over a large space where human-like heuristics are helpful, and (2) solutions that are able to be verified or evaluated automatically. 
+For instance, math proofs are not easy to automatically iterate on or create without mathematical knowledge, but can be verified automatically via lean. In contrast, training a model is a similar search over parameters, but doesn't use human-like heuristics (i.e. a human doesn't have very good intuition that this feature should be weighed heavier).
+
+To illustrate and explore these problems, we will use the Wordle game.
+Wordle is an interative guessing game. A game is initialized with a 5 letter word that is hidden from the player. The player guesses a 5 letter word, and the system gives feed back per letter in each position, green if the letter is the right letter in the right spot, yellow if the letter in that position is somewhere else in the hidden word but not in that spot, and grey if the letter at that position is not in the hidden word.
+Typically a user has 5 guesses to figure out the target word, but in this codebase we do not enforce this limit.
+
+
+In this activity, we will build a agent-swarm to solve world. 
+First implement the `play_wordle` tool .
+Set the `self.game` attribute in the `WordleAgent` so that the LLM can make guesses to the game.
+Then prompt the LLM to solve the game.
+In the main method, launch 4 agents in parallel to solve a single game. Stop the agents after one has found the solution.
 
 To run the script:
 ```
@@ -108,13 +121,25 @@ uv run python run-04.py
 
 
 ## Module 05: Blackboard Communication
+Now we will set up group communication between agents.
+We will use a decentralized pattern: each agent is independently searching for the same goal but can explicitly share information with other agents.
+
+The starter code implements the outlines of a blackboard for communication. This is one pattern of communication where an agent can write a message or status to other agents, but only the latest status is avaliable for a different agent to read. Look at how the `read_blackboard` and `write_blackboard` tools are implemented using the `insight_dict` attribute of the `WordleAgent`. Then implement `receive_information` which is an action used by `write_blackboard` to send information to all agents.
 
 To run the script:
 ```
 uv run python run-06.py
 ```
 
-## Module 06: Sub-Agents
+## Module 06: Centralized Orchestration
+Next, we use worker agents to search for the best strategy for playing wordle and use that strategy to play the game.
+First look at the `StrategyAgent` that is written to investigate a particular strategy. Instead of making guesses against a fixed game, it is giveen a simulate tool, which allows it to simulate a guess.
+The startegy agent can simulate what a strategy would be like on an imagined set of games, but cannot play the real game.
+The `CoordinatorAgent` implements a search over candidate strategies.
+
+You need to first implemnt `find_strategy` that uses the worker agents. The `self.search_client` LLM client already implements a `evaluate_strategies` tool that uses the worker agents. 
+Then in `main`, launch the coordinator agents with the worker handles, and before playing a wordle game, use `find_strategy` to find the best strategies.
+
 To run the script:
 ```
 uv run python run-06.py

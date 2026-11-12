@@ -107,8 +107,8 @@ async def main(model: str = DEFAULT_MODEL):
             game = WordleGame()
 
             logger.info('Starting agent actions.')
-            # TODO: Launch the agents in parallel.
-            # Stop the search when one of the agents finds an naswer
+            # TODO: Start the search on multiple agents in parallel
+            # Stop the search when one of the agents finds an answer
 
             logger.info(f'True target word: {game.target}')
 
