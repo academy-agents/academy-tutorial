@@ -241,7 +241,8 @@ class CoordinatorAgent(Agent):
             'evaluate them, then reply with '
             'only the best strategy, written as instructions for a player.'
         )
-        # TODO: Search for the best strategy using the workers
+        # TODO: Send the prompt to `self.search_client` (see the `run`
+        # helper) and return the best strategy it replies with
 
     @action
     async def play_wordle(
@@ -276,9 +277,12 @@ async def main(model: str = DEFAULT_MODEL):
 
         logger.info('Launching coordinator.')
         # TODO: Launch the coordinator agent with all of the worker agents.
+        # (pass args=(workers,) and kwargs={'model': model})
+        coordinator = ...
 
         logger.info('Searching for the best strategy.')
         # TODO: Use the coordinator to search for the best wordle strategy
+        strategy = ...
 
         for _ in range(2):  # Play 2 games with the same strategy
             logger.info('Starting new game.')

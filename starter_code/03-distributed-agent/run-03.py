@@ -193,16 +193,18 @@ async def main(model: str = DEFAULT_MODEL) -> None:
     async with await Manager.from_exchange_factory(
         factory=HttpExchangeFactory(),
         log_config=recommended_logging(),
-        executors=..., # TODO: Pass the excutor to the manager
+        executors=...,  # TODO: Pass the executor to the manager
     ) as manager:
         logger.info('Launching agents.')
 
-        mlip_agent = # TODO: Launch with the passed executor
+        mlip_agent = ...  # TODO: Launch with the passed executor
         
         # Wait for the MLIP agent to launch 
         await mlip_agent.ping()
 
-        hdl = # TODO: Launch the materials agent locally (pass kwargs={'model': model})
+        # TODO: Launch the materials agent locally, on the event loop
+        # (pass kwargs={'model': model})
+        hdl = ...
 
         result = await hdl.query(
             'First, compute the energy of ethanol. Then, in a separate '

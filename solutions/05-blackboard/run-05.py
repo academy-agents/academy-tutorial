@@ -31,8 +31,8 @@ class WordleAgent(Agent):
     """A LLM powered agent playing wordle.
 
     This agent uses a ReAct loop with a tool to make guesses to a wordle
-    game, and a tool to collaborate with other agents. This pattern coudld
-    be used to build "agent forests". Academy allows there agents to run in
+    game, and a tool to collaborate with other agents. This pattern could
+    be used to build "agent forests". Academy allows these agents to run in
     a distributed environment, for instance to replace the Wordle game with
     a more computationally expensive simulation application.
 
@@ -208,7 +208,7 @@ async def main(model: str = DEFAULT_MODEL):
 
         # The pre-created mailboxes are then used to launch the agents
         logger.info('Launching agents.')
-        hdls: Handle[WordleAgent] = []
+        hdls: list[Handle[WordleAgent]] = []
         for wordle_agent_reg in agent_registrations:
             hdls.append(
                 await manager.launch(

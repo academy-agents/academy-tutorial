@@ -1,4 +1,5 @@
-# 06: LLM Agent
+# 06: Centralized Orchestration
 
-Build a LLM powered agent with Academy.
-Inject Academy capabilities into LLM tools to enable multi-agent communication within a Claude Agent SDK agent.
+A coordinator agent searches for the best Wordle strategy by delegating
+strategy evaluation to worker agents, then uses the best strategy to play
+the real game.

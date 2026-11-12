@@ -89,8 +89,8 @@ class WordleAgent(Agent):
             'Return the answer to the wordle puzzle.'
         )
 
-        # TODO: Set the agent's game so it has the appropriate tool
-        # Then let the agent solved the puzzle.
+        # TODO: Set `self.game` so the `wordle_feedback` tool uses this game.
+        # Then send the prompt to the LLM and return the final result.
 
 
 async def main(model: str = DEFAULT_MODEL):
@@ -99,16 +99,17 @@ async def main(model: str = DEFAULT_MODEL):
         log_config=recommended_logging(),
     ) as manager:
         logger.info('Launching agents.')
-        # TODO: Launch the agents to solve wordle in parallel
+        # TODO: Launch 2 agents to solve wordle in parallel
         # (pass kwargs={'model': model})
+        hdls = ...
 
         for _ in range(2):  # Play 2 games
             logger.info('Starting new game.')
             game = WordleGame()
 
             logger.info('Starting agent actions.')
-            # TODO: Start the search on multiple agents in parallel
-            # Stop the search when one of the agents finds an answer
+            # TODO: Have every agent play the same game in parallel,
+            # then log the answer each agent returned
 
             logger.info(f'True target word: {game.target}')
 

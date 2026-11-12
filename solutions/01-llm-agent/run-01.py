@@ -19,12 +19,7 @@ DEFAULT_MODEL = 'claude-haiku-4-5'
 
 
 class HelloWorldAgent(Agent):
-    """A LLM powered agent playing wordle.
-
-    This agent uses a ReAct loop with a tool to make guesses to a wordle
-    game. Each agent plays independently, without communicating with
-    other agents.
-    """
+    """A simple chat agent wrapping a persistent Claude session."""
 
     def __init__(self, model: str = DEFAULT_MODEL) -> None:
         self.model = model
@@ -33,25 +28,14 @@ class HelloWorldAgent(Agent):
     async def agent_on_startup(self):
         options = ClaudeAgentOptions(
             model=self.model,
-            system_prompt=(
-                'You are playing Wordle, a word-guessing game. '
-                'The target is a 5-letter English word. '
-                'The `wordle_feedback` tool has an internal hidden word '
-                'that you are trying to guess. '
-                'Use the `wordle_feedback` tool to make guesses. '
-                'After each guess you receive per-letter feedback: '
-                'correct (right position), present (wrong position), '
-                'absent (not in word). '
-                'Use this feedback to narrow down the answer.'
-            ),
-            # Only expose our tools, not built-in or user-configured ones
+            system_prompt='You are a helpful assistant.',
+            # Don't expose built-in or user-configured tools
             tools=[],
             strict_mcp_config=True,
-            allowed_tools=[],
             max_turns=12,
         )
 
-        # Connect once so the agent reuses the same session across games
+        # Connect once so the agent reuses the same session across queries
         self.client = ClaudeSDKClient(options=options)
         await self.client.connect()
 
@@ -61,13 +45,16 @@ class HelloWorldAgent(Agent):
 
     @action
     async def message(self, message: str) -> None:
-        """Message the agent without recieving a response."""
-
+        """Message the agent without receiving a response."""
         await self.client.query(message)
-        await self.client.receive_messages()
+        # Wait for the turn to finish, but discard the reply
+        async for _ in self.client.receive_response():
+            pass
 
     @action
     async def query(self, prompt: str) -> str:
+        """Query the agent and return its response."""
+        result = ''
         await self.client.query(prompt)
         async for message in self.client.receive_response():
             if isinstance(message, ResultMessage):
