@@ -19,14 +19,15 @@ This will set up a local environment to complete the tutorial.
 
 ### Set-up Inference Provider
 The tutorial is written using ClaudeSDKClient to perform LLM inference.
-By default, the `.claude/settings.json` file points the inference requests to the [ALCF inference service](https://docs.alcf.anl.gov/services/inference-endpoints/).
+By default, the `.claude/settings.local.json` file points the inference requests to the [ALCF inference service](https://docs.alcf.anl.gov/services/inference-endpoints/).
 
-If you would like to use a different inference provider, use environment variables to point to any Anthropic API compatible endpoint.
+If you would like to use a different inference provider, first delete the settings file (otherwise its values override your environment variables), then use environment variables to point to any Anthropic API compatible endpoint.
 ```
+rm .claude/settings.local.json
 export ANTHROPIC_BASE_URL=<YOUR ENDPOINT>
 export ANTHROPIC_API_KEY=<YOUR API KEY>
 ```
-To point at Anthropic's default url, delete the settings file: `rm .claude/settings.local.json`.
+To use Anthropic's API directly, delete the settings file --- it will automatically use an API key or auth token that you have set on your machine.
 
 If your inference provider does not provide `muse-spark-bf16` (the default model), pass your model as a command line argument to each script:
 ```
@@ -98,14 +99,17 @@ Pass the executor to the `Manager` with the `executors` argument; a single execu
 To keep this module lightweight, the `MLIPAgent` here returns mock energies instead of running the model.
 
 Globus Compute is a FaaS platform that allows you to bring your own compute resource. In `run-compute-function.py` we show an example of running a remote function. To run the test function, set the environment variable, then run:
+
 ```
 export ACADEMY_TUTORIAL_ENDPOINT=<ENDPOINT_ID>
 uv run python run-compute-function.py
 ```
 
+We will share the ENDPOINT ID during the tutorial.
+
 The script also uses a cloud hosted exchange. The exchange is authenticated with [Globus Auth](https://www.globus.org/platform/services/auth), a federated identity provider. When you run the script you will be asked to give permissions for the `academy` client to use the exchange, and authenticate your token. After you provide the permissions, a token will be created that the `academy` client uses to communicate with the exchange.
 
-To run the script:
+To run the script (if `ACADEMY_TUTORIAL_ENDPOINT` is not set, the MLIP agent runs in a local process pool instead):
 ```
 uv run python run-03.py
 ```

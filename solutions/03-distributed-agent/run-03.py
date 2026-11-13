@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import argparse
 import ast
 import asyncio
@@ -60,7 +58,6 @@ class MLIPAgent(Agent):
         Returns:
             The energy of each structure in eV, in the same order.
         """
-        logger.info(f'Called mock predict energy on {len(structures)} structure(s).')
         energies = []
         for _ in structures:
             energies.append(
@@ -148,7 +145,8 @@ class MaterialsAgent(Agent):
                 'mapping action names to their type signature and docstring.\n'
                 '4. Call an action with `await handle.<action_name>(...)`.\n'
                 '\n'
-                'Energies are in eV and lengths in Angstrom.'
+                'Energies are in eV and lengths in Angstrom.\n'
+                f'You are agent {self.agent_id}, do not query yourself.'
             ),
             mcp_servers={
                 'python': create_sdk_mcp_server('python', tools=[execute_python]),
@@ -198,8 +196,8 @@ async def main(model: str = DEFAULT_MODEL) -> None:
         logger.info('Launching agents.')
 
         mlip_agent = await manager.launch(MLIPAgent) # Launch with the passed executor
-        
-        # Wait for the MLIP agent to launch 
+
+        # Wait for the MLIP agent to launch
         await mlip_agent.ping()
 
         hdl = await manager.launch(
