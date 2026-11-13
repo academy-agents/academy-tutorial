@@ -21,6 +21,11 @@ This will set up a local environment to complete the tutorial.
 The tutorial is written using ClaudeSDKClient to perform LLM inference.
 By default, the `.claude/settings.local.json` file points the inference requests to the [ALCF inference service](https://docs.alcf.anl.gov/services/inference-endpoints/).
 
+You must authenticate with Globus to use the inference provider, and be part of the group that we created for this tutorial:
+```
+uv run alcf-tokens login
+```
+
 If you would like to use a different inference provider, first delete the settings file (otherwise its values override your environment variables), then use environment variables to point to any Anthropic API compatible endpoint.
 ```
 rm .claude/settings.local.json
