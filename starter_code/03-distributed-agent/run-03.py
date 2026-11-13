@@ -33,7 +33,7 @@ from globus_compute_sdk import Executor as GCExecutor
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL = 'claude-haiku-4-5'
+DEFAULT_MODEL = 'muse-spark-bf16'
 
 
 class MLIPAgent(Agent):

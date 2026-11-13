@@ -9,7 +9,7 @@ This tutorial provides a step by step introduction of Academy, from building a s
 
 #### Install Tutorial Package
 
-Clone the repository from github and install the tutorial package. The package will automatically install `academy` as well.  The tutorial requires `python>=3.12`. We recommend completing the tutorial inside a virtual environment with `uv`.
+Clone the repository from github and install the tutorial package. The package will automatically install `academy` as well.  The tutorial requires `python>=3.11;python<3.15`. We recommend completing the tutorial inside a virtual environment with `uv`.
 ```
 git clone git@github.com:academy-agents/academy-tutorial.git
 cd academy-tutorial
@@ -19,13 +19,16 @@ This will set up a local environment to complete the tutorial.
 
 ### Set-up Inference Provider
 The tutorial is written using ClaudeSDKClient to perform LLM inference.
-If you are not authenticated with Anthropic, or would like to use a different inference provider, use environment variables to point to any Anthropic API compatible endpoint.
+By default, the `.claude/settings.json` file points the inference requests to the [ALCF inference service](https://docs.alcf.anl.gov/services/inference-endpoints/).
+
+If you would like to use a different inference provider, use environment variables to point to any Anthropic API compatible endpoint.
 ```
 export ANTHROPIC_BASE_URL=<YOUR ENDPOINT>
 export ANTHROPIC_API_KEY=<YOUR API KEY>
 ```
+To point at Anthropic's default url, delete the settings file: `rm .claude/settings.local.json`.
 
-If your inference provider does not provide `claude-haiku-4-5` (the default model), pass your model as a command line argument to each script:
+If your inference provider does not provide `muse-spark-bf16` (the default model), pass your model as a command line argument to each script:
 ```
 uv run python run-01.py --model <MODEL NAME>
 ```
@@ -152,4 +155,23 @@ Then in `main`, launch the coordinator agent with the worker handles, and before
 To run the script:
 ```
 uv run python run-06.py
+```
+
+## Module 07: Observing Agents
+Lastly, we will look at monitoring and observing remotely deployed agents. `academy-dashboard` is a package that connects Academy agents to a cloud-hosted (or locally hosted) dashboard.
+Go to [dashboard.academy-agents.org](https://dashboard.academy-agents.org) and log in using Globus.
+Create an agent on the dashboard. Each dashboard agent organizes the display and logs for one project or campaign.
+Copy the UUID of the agent.
+
+`run-07.py` is a complete version of Module 01, built as a `MonitoredAgent`. This agent is initialized with the ID of the dashboard agent. `MonitoredAgent` forwards the agent's logs to the dashboard so they can be observed remotely. It also adds actions that allow the dashboard to manage the agent.
+
+The dashboard requires Python 3.13. If you have python 3.13, install the dashboard code with:
+```
+uv python pin 3.13
+uv sync --extra dashboard
+```
+
+To run the script:
+```
+uv run python run-07.py --user-agent-id <DASHBOARD_ID>
 ```

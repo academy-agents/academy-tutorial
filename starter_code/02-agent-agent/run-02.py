@@ -33,7 +33,7 @@ from academy.manager import Manager
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL = 'claude-haiku-4-5'
+DEFAULT_MODEL = 'muse-spark-bf16'
 
 
 async def run_mlip(structures: list[ase.Atoms]) -> list[float]:

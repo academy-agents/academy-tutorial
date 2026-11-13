@@ -25,6 +25,8 @@ classifiers = [
 ]
 dependencies = [
     "academy-py==1.0",
+    "alcf-ai>=0.21.0",
+    "alcf-tokens>=0.4.0",
     "claude-agent-sdk>=0.2.165",
     "emoji",
     "globus-compute-sdk",
@@ -43,6 +45,9 @@ dev = [
     "pytest",
     "pytest-asyncio>=1.1",
     "nb-clean>=2.0.0",
+]
+dashboard = [
+    "academy-dashboard==1.1.0; python_version == '3.13'",
 ]
 
 [tool.codespell]

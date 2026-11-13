@@ -1,0 +1,10 @@
+{
+  "apiKeyHelper": "uvx alcf-tokens get-token inference",
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://inference-api.alcf.anl.gov/resource_server/minerva/api",
+    "ANTHROPIC_MODEL": "muse-spark-bf16",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "muse-spark-bf16",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "muse-spark-bf16",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "muse-spark-bf16"
+  }
+}

@@ -23,7 +23,7 @@ from academy_tutorial.wordle import WordleGame
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL = 'claude-haiku-4-5'
+DEFAULT_MODEL = 'muse-spark-bf16'
 
 RULES = (
     'Wordle is a word-guessing game where the target is a hidden 5-letter '
