@@ -24,7 +24,7 @@ The tutorial is written using ClaudeSDKClient to perform LLM inference.
 By default, the `.claude/settings.local.json` file points the inference requests to the [ALCF inference service](https://docs.alcf.anl.gov/services/inference-endpoints/).
 
 You must authenticate with Globus to use the inference provider, and be part of the group that we created for this tutorial.
-Click [here](https://app.globus.org/groups/7484677a-df8b-11f1-9973-0afff9abf491) to request membership. One of the group administrators must approve ther request.
+Click [here](https://app.globus.org/groups/7484677a-df8b-11f1-9973-0afff9abf491) to request membership. One of the group administrators must approve the request.
 
 After joining the group, run this command to authenticate:
 ```
