@@ -2,6 +2,8 @@
 ---
 This tutorial provides a step by step introduction of Academy, from building a simple "Hello World" agent to coordinating a distributed, multi-agent game. The tutorial is structured as 7 modules that are cumulative --- the solution to the previous module provides the necessary information to understand the next module.
 
+The schedule and slides are available [here](https://academy-agents.org/blog/2026/11/sc-tutorial/)
+
 *Estimated Time: 40 minutes*
 
 ---
