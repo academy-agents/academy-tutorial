@@ -54,7 +54,7 @@ uv run python run-01.py
 The tutorial also contains a walk through of writing distributed applications with `academy` and `globus compute`. You will need to follow the instructions to setup a [globus compute endpoint](https://globus-compute.readthedocs.io/en/latest/quickstart.html#deploying-an-endpoint) or provide the `endpoint_id` of an endpoint you have access to. In the endpoint environment, you will also need to install the `academy-tutorial` package.
 To use the endpoint with the tutorial:
 ```
-export ACADEMY_TUTORIAL_ENDPOINT=<endpoint_id>
+export ACADEMY_TUTORIAL_ENDPOINT=63d61fb2-b9c7-4a60-8177-b1711d32e431
 ```
 
 
